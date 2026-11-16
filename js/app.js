@@ -115,25 +115,25 @@
     const month=$("photoMonth").value||iso(new Date()).slice(0,7);
     const [year,monthNo]=month.split("-").map(Number);
     const result=[];
-    for(const raw of text.split(/\\n+/)){
-      const line=raw.replace(/\\s+/g," ").trim();
+    for(const raw of text.split(/\n+/)){
+      const line=raw.replace(/\s+/g," ").trim();
       if(!line)continue;
-      const flight=line.match(/\\bZE\\s?\\d{2,4}\\b/i);
-      const code=line.match(/\\b(NS|DO|RDO|PV|SANLV|STBY|DH)\\b/i);
-      const time=line.match(/\\b([01]?\\d|2[0-3])[:.]([0-5]\\d)\\b/);
+      const flight=line.match(/\bZE\s?\d{2,4}\b/i);
+      const code=line.match(/\b(NS|DO|RDO|PV|SANLV|STBY|DH)\b/i);
+      const time=line.match(/\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/);
       let day=null;
-      const date=line.match(/(?:^|\\D)(\\d{1,2})(?:일|日|\\s|$)/);
+      const date=line.match(/(?:^|\D)(\d{1,2})(?:일|日|\s|$)/);
       if(date)day=Number(date[1]);
       else{
-        const slash=line.match(/(?:^|\\D)(\\d{1,2})\\/(\\d{1,2})(?:\\D|$)/);
+        const slash=line.match(/(?:^|\D)(\d{1,2})\/(\d{1,2})(?:\D|$)/);
         if(slash)day=Number(slash[2]);
       }
       if(!day||day<1||day>31)continue;
       const dateValue=year+"-"+String(monthNo).padStart(2,"0")+"-"+String(day).padStart(2,"0");
-      if(flight)result.push([dateValue,"flight",flight[0].replace(/\\s/g,"").toUpperCase(),time?time[0].replace(".",":"):""].join(" | "));
+      if(flight)result.push([dateValue,"flight",flight[0].replace(/\s/g,"").toUpperCase(),time?time[0].replace(".",":"):""].join(" | "));
       else if(code)result.push([dateValue,code[1].toUpperCase(),code[1].toUpperCase(),""] .join(" | "));
     }
-    return result.join("\\n");
+    return result.join("\n");
   }
   $("runOcrButton").addEventListener("click",async()=>{
     if(!selectedRosterPhoto)return;
@@ -160,7 +160,7 @@
     }
   });
   $("savePhotoRows").addEventListener("click",()=>{
-    const rows=$("importRows").value.split(/\\n+/).map(x=>x.trim()).filter(Boolean);
+    const rows=$("importRows").value.split(/\n+/).map(x=>x.trim()).filter(Boolean);
     const imported=[];
     for(const row of rows){
       const parts=row.split("|").map(x=>x.trim());
