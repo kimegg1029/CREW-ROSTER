@@ -136,9 +136,9 @@
     groups.sort((a,b)=>a.center-b.center);
     if(groups.length<3)return "";
     const allX=anchors.map(w=>w.x);
-    const left=Math.max(0,Math.min(...allX)-imageWidth*.035);
-    const right=Math.min(imageWidth,Math.max(...allX)+imageWidth*.035);
-    const colWidth=(right-left)/7;
+    const left=Math.min(...allX);
+    const right=Math.max(...allX);
+    const colWidth=(right-left)/6 || imageWidth/7;
     const output=[];
     for(let gi=0;gi<groups.length;gi++){
       const group=groups[gi];
@@ -146,11 +146,11 @@
       const bandBottom=gi+1<groups.length?(group.center+groups[gi+1].center)/2:imageHeight;
       for(const anchor of group.items){
         const day=Number(anchor.text);
-        const col=Math.max(0,Math.min(6,Math.floor((anchor.x-left)/colWidth)));
-        const slot=(new Date(year,monthNo-1,1).getDay()+day-1);
-        // Skip dates belonging to adjacent months shown at the edges.
-        if(day>daysInMonth)continue;
-        const dateValue=year+"-"+String(monthNo).padStart(2,"0")+"-"+String(day).padStart(2,"0");
+        const col=Math.max(0,Math.min(6,Math.round((anchor.x-left)/colWidth)));
+        const mappedDay=gi*7+col-firstWeekday+1;
+        // Use the calendar's actual grid position to exclude adjacent-month dates.
+        if(mappedDay<1||mappedDay>daysInMonth)continue;
+        const dateValue=year+"-"+String(monthNo).padStart(2,"0")+"-"+String(mappedDay).padStart(2,"0");
         const cellWords=tokens.filter(w=>{
           const wordCol=Math.max(0,Math.min(6,Math.floor((w.x-left)/colWidth)));
           return wordCol===col&&w.y>=bandTop&&w.y<bandBottom&&
@@ -183,7 +183,8 @@
       const result=await worker.recognize(selectedRosterPhoto);
       const text=result.data.text||"";
       $("ocrText").value=text;
-      $("importRows").value=suggestRowsFromOcr(text);
+      const preview=$("photoPreview");
+      $("importRows").value=suggestRowsFromOcrWords(result.data.words,preview.naturalWidth,preview.naturalHeight);
       $("ocrStatus").textContent="인식 완료. 원문과 일정 후보를 확인하고 필요한 부분을 수정해 줘.";
     }catch(error){
       console.error("OCR error",error);
