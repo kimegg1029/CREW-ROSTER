@@ -11,7 +11,18 @@
     personal:{label:"개인 일정",color:"#d5a34d"}, unknown:{label:"미확인",color:"#9aa0a8"}
   };
   let events = loadEvents(), viewDate = new Date(), editingId = null;
-  function loadEvents(){try{const v=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");return Array.isArray(v)?v:[]}catch{return[]}}
+  function loadEvents(){
+    try {
+      const v=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
+      if(!Array.isArray(v)) return [];
+      return v.filter(e=>e && typeof e==="object" &&
+        typeof e.id==="string" && typeof e.start==="string" &&
+        /^\\d{4}-\\d{2}-\\d{2}$/.test(e.start) &&
+        typeof e.end==="string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(e.end) &&
+        e.end>=e.start && typeof e.title==="string"
+      ).map(e=>({...e, type:TYPES[e.type]?e.type:"unknown", showUp:e.showUp||"", color:e.color||TYPES[e.type]?.color||TYPES.unknown.color}));
+    } catch { return []; }
+  }
   function persist(){localStorage.setItem(STORAGE_KEY,JSON.stringify(events))}
   function iso(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-")}
   function parseDate(s){const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)}
@@ -45,7 +56,7 @@
     $("eventType").value=event?.type||"flight"; $("eventTitle").value=event?.title||"";
     $("showUpTime").value=event?.showUp||"";
     $("startDate").value=event?.start||date||iso(new Date()); $("endDate").value=event?.end||date||iso(new Date());
-    $("eventNote").value=event?.note||""; $("eventColor").value=event?.color||TYPES[$("eventType").value].color;
+    $("eventNote").value=event?.note||""; $("eventColor").value=event?.color||TYPES[$("eventType").value]?.color||TYPES.unknown.color;
     $("deleteEvent").hidden=!event; updateShowUpVisibility(); $("eventDialog").showModal();
   }
   $("rosterBody").addEventListener("click",e=>{
@@ -53,7 +64,7 @@
     if(item){const found=events.find(x=>x.id===item.dataset.event);if(found)openEditor(found.start,found);return}
     const row=e.target.closest("tr");if(row){const dateCell=row.querySelector(".date-cell");if(dateCell){const [mm,dd]=dateCell.textContent.split("/").map(Number);openEditor(iso(new Date(viewDate.getFullYear(),mm-1,dd)))}}
   });
-  $("eventType").addEventListener("change",()=>{$("eventColor").value=TYPES[$("eventType").value].color;updateShowUpVisibility()});
+  $("eventType").addEventListener("change",()=>{$("eventColor").value=TYPES[$("eventType").value]?.color||TYPES.unknown.color;updateShowUpVisibility()});
   $("eventForm").addEventListener("submit",e=>{
     e.preventDefault(); const start=$("startDate").value,end=$("endDate").value;
     if(!start||!end||end<start){alert("종료일은 시작일과 같거나 이후여야 합니다.");return}
@@ -76,5 +87,5 @@
   $("settingsButton").addEventListener("click",()=>$("importFile").click());
   $("importFile").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;try{const data=JSON.parse(await file.text()),incoming=Array.isArray(data)?data:data.events;if(!Array.isArray(incoming))throw new Error("format");if(!confirm("백업 일정으로 현재 일정을 교체할까요?"))return;events=incoming.filter(x=>x&&x.id&&x.start&&x.end&&x.title).map(x=>({...x,showUp:x.showUp||""}));persist();render();alert("복원했습니다.")}catch{alert("올바른 CREW ROSTER 백업 파일이 아닙니다.")}finally{e.target.value=""}});
   if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
-  render();
+  try { render(); } catch (error) { console.error("CREW ROSTER 초기화 오류:",error); $("eventCount").textContent="일정 데이터를 확인해 주세요."; }
 })();
