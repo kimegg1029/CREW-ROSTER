@@ -12,7 +12,7 @@ h1{font-size:21px;letter-spacing:-.7px;margin:4px 0 0}
 .roster-wrap{background:var(--surface);border:1px solid var(--line);border-radius:15px;overflow:hidden}
 .roster-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px}
 .roster-table th{height:40px;background:var(--page);color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.1px}
-.roster-table th:nth-child(1){width:19%}.roster-table th:nth-child(2){width:13%}.roster-table th:nth-child(3){width:22%}.roster-table th:nth-child(4){width:46%}
+.roster-table th:nth-child(1){width:19%}.roster-table th:nth-child(2){width:13%}.roster-table th:nth-child(3){width:46%}.roster-table th:nth-child(4){width:22%}
 .roster-table td{height:43px;padding:7px 5px;border-top:1px solid var(--line);text-align:center;vertical-align:middle}
 .roster-table td.date-cell{font-weight:700;font-variant-numeric:tabular-nums}
 .roster-table td.day-cell{color:var(--muted);font-size:11px}
@@ -40,4 +40,4 @@ h1{font-size:21px;letter-spacing:-.7px;margin:4px 0 0}
 .event-dialog input[type=color]{padding:5px}.date-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .form-actions{gap:10px;margin-top:20px}.save-button,.delete-button{height:43px;border:0;border-radius:11px;padding:0 18px;font-weight:700}
 .save-button{flex:1;background:var(--accent);color:white}.delete-button{background:var(--soft);color:var(--accent)}
-@media(max-width:420px){.app{padding-left:9px;padding-right:9px}.roster-table{font-size:11px}.roster-table th:nth-child(1){width:18%}.roster-table th:nth-child(2){width:12%}.roster-table th:nth-child(3){width:23%}.roster-table th:nth-child(4){width:47%}.roster-table td{padding:6px 3px}.schedule-item{font-size:11px;padding:2px}.schedule-item.nonflight{font-size:10px}.legend{gap:11px}}
+@media(max-width:420px){.app{padding-left:9px;padding-right:9px}.roster-table{font-size:11px}.roster-table th:nth-child(1){width:18%}.roster-table th:nth-child(2){width:12%}.roster-table th:nth-child(3){width:47%}.roster-table th:nth-child(4){width:23%}.roster-table td{padding:6px 3px}.schedule-item{font-size:11px;padding:2px}.schedule-item.nonflight{font-size:10px}.legend{gap:11px}}
