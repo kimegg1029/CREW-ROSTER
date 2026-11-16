@@ -15,7 +15,7 @@ self.addEventListener("fetch", event => {
   const request = event.request;
   if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
   const path = new URL(request.url).pathname;
-  const isAppCode = /\\.(html|js|css)$/.test(path);
+  const isAppCode = path.endsWith(".html") || path.endsWith(".js") || path.endsWith(".css");
   if (isAppCode) {
     event.respondWith(fetch(request, { cache: "no-store" }).then(response => {
       if (response.ok && path.endsWith(".html")) {
