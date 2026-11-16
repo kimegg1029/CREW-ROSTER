@@ -11,16 +11,22 @@
     personal:{label:"개인 일정",color:"#d5a34d"}, unknown:{label:"미확인",color:"#9aa0a8"}
   };
   let events = loadEvents(), viewDate = new Date(), editingId = null;
+  function isDate(value){
+    return typeof value==="string" && value.length===10 && value[4]==="-" && value[7]==="-";
+  }
   function loadEvents(){
     try {
-      const v=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
-      if(!Array.isArray(v)) return [];
-      return v.filter(e=>e && typeof e==="object" &&
-        typeof e.id==="string" && typeof e.start==="string" &&
-        (e.start.length===10 && e.start[4]==="-" && e.start[7]==="-").test(e.start) &&
-        typeof e.end==="string" && (e.start.length===10 && e.start[4]==="-" && e.start[7]==="-").test(e.end) &&
-        e.end>=e.start && typeof e.title==="string"
-      ).map(e=>({...e, type:TYPES[e.type]?e.type:"unknown", showUp:e.showUp||"", color:e.color||TYPES[e.type]?.color||TYPES.unknown.color}));
+      const value=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
+      if(!Array.isArray(value)) return [];
+      return value.filter(event=>event && typeof event==="object" &&
+        typeof event.id==="string" && isDate(event.start) && isDate(event.end) &&
+        event.end>=event.start && typeof event.title==="string"
+      ).map(event=>({
+        ...event,
+        type:TYPES[event.type]?event.type:"unknown",
+        showUp:event.showUp||"",
+        color:event.color||TYPES[event.type]?.color||TYPES.unknown.color
+      }));
     } catch { return []; }
   }
   function persist(){localStorage.setItem(STORAGE_KEY,JSON.stringify(events))}
