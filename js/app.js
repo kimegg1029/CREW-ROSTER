@@ -17,8 +17,8 @@
       if(!Array.isArray(v)) return [];
       return v.filter(e=>e && typeof e==="object" &&
         typeof e.id==="string" && typeof e.start==="string" &&
-        /^\\d{4}-\\d{2}-\\d{2}$/.test(e.start) &&
-        typeof e.end==="string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(e.end) &&
+        (e.start.length===10 && e.start[4]==="-" && e.start[7]==="-").test(e.start) &&
+        typeof e.end==="string" && (e.start.length===10 && e.start[4]==="-" && e.start[7]==="-").test(e.end) &&
         e.end>=e.start && typeof e.title==="string"
       ).map(e=>({...e, type:TYPES[e.type]?e.type:"unknown", showUp:e.showUp||"", color:e.color||TYPES[e.type]?.color||TYPES.unknown.color}));
     } catch { return []; }
