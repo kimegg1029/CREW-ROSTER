@@ -92,6 +92,95 @@
   $("backupButton").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" ")exportBackup()});
   $("settingsButton").addEventListener("click",()=>$("importFile").click());
   $("importFile").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;try{const data=JSON.parse(await file.text()),incoming=Array.isArray(data)?data:data.events;if(!Array.isArray(incoming))throw new Error("format");if(!confirm("백업 일정으로 현재 일정을 교체할까요?"))return;events=incoming.filter(x=>x&&x.id&&x.start&&x.end&&x.title).map(x=>({...x,showUp:x.showUp||""}));persist();render();alert("복원했습니다.")}catch{alert("올바른 CREW ROSTER 백업 파일이 아닙니다.")}finally{e.target.value=""}});
+
+  let selectedRosterPhoto=null;
+  $("photoImportButton").addEventListener("click",()=>{
+    $("photoMonth").value=iso(new Date()).slice(0,7);
+    $("photoDialog").showModal();
+  });
+  function closePhotoDialog(){ $("photoDialog").close(); }
+  $("closePhotoDialog").addEventListener("click",closePhotoDialog);
+  $("closePhotoDialogBottom").addEventListener("click",closePhotoDialog);
+  $("rosterPhoto").addEventListener("change",e=>{
+    selectedRosterPhoto=e.target.files?.[0]||null;
+    $("runOcrButton").disabled=!selectedRosterPhoto;
+    $("ocrText").value=""; $("importRows").value="";
+    if(selectedRosterPhoto){
+      $("photoPreview").src=URL.createObjectURL(selectedRosterPhoto);
+      $("photoPreview").hidden=false;
+      $("ocrStatus").textContent="사진 준비 완료. 글자 인식을 시작해 줘.";
+    }else{$("photoPreview").hidden=true;$("ocrStatus").textContent="사진을 선택해 줘.";}
+  });
+  function suggestRowsFromOcr(text){
+    const month=$("photoMonth").value||iso(new Date()).slice(0,7);
+    const [year,monthNo]=month.split("-").map(Number);
+    const result=[];
+    for(const raw of text.split(/\\n+/)){
+      const line=raw.replace(/\\s+/g," ").trim();
+      if(!line)continue;
+      const flight=line.match(/\\bZE\\s?\\d{2,4}\\b/i);
+      const code=line.match(/\\b(NS|DO|RDO|PV|SANLV|STBY|DH)\\b/i);
+      const time=line.match(/\\b([01]?\\d|2[0-3])[:.]([0-5]\\d)\\b/);
+      let day=null;
+      const date=line.match(/(?:^|\\D)(\\d{1,2})(?:일|日|\\s|$)/);
+      if(date)day=Number(date[1]);
+      else{
+        const slash=line.match(/(?:^|\\D)(\\d{1,2})\\/(\\d{1,2})(?:\\D|$)/);
+        if(slash)day=Number(slash[2]);
+      }
+      if(!day||day<1||day>31)continue;
+      const dateValue=year+"-"+String(monthNo).padStart(2,"0")+"-"+String(day).padStart(2,"0");
+      if(flight)result.push([dateValue,"flight",flight[0].replace(/\\s/g,"").toUpperCase(),time?time[0].replace(".",":"):""].join(" | "));
+      else if(code)result.push([dateValue,code[1].toUpperCase(),code[1].toUpperCase(),""] .join(" | "));
+    }
+    return result.join("\\n");
+  }
+  $("runOcrButton").addEventListener("click",async()=>{
+    if(!selectedRosterPhoto)return;
+    if(!window.Tesseract){$("ocrStatus").textContent="글자 인식 모듈을 불러오지 못했어. 인터넷 연결을 확인해 줘.";return;}
+    $("runOcrButton").disabled=true;
+    $("ocrStatus").textContent="글자 인식 준비 중…";
+    let worker;
+    try{
+      worker=await Tesseract.createWorker("eng+kor",1,{logger:message=>{
+        if(message.status==="recognizing text")$("ocrStatus").textContent="글자 인식 중… "+Math.round((message.progress||0)*100)+"%";
+        else if(message.status)$("ocrStatus").textContent=message.status;
+      }});
+      const result=await worker.recognize(selectedRosterPhoto);
+      const text=result.data.text||"";
+      $("ocrText").value=text;
+      $("importRows").value=suggestRowsFromOcr(text);
+      $("ocrStatus").textContent="인식 완료. 원문과 일정 후보를 확인하고 필요한 부분을 수정해 줘.";
+    }catch(error){
+      console.error("OCR error",error);
+      $("ocrStatus").textContent="인식에 실패했어. 더 선명한 사진으로 다시 시도해 줘.";
+    }finally{
+      if(worker)await worker.terminate().catch(()=>{});
+      $("runOcrButton").disabled=!selectedRosterPhoto;
+    }
+  });
+  $("savePhotoRows").addEventListener("click",()=>{
+    const rows=$("importRows").value.split(/\\n+/).map(x=>x.trim()).filter(Boolean);
+    const imported=[];
+    for(const row of rows){
+      const parts=row.split("|").map(x=>x.trim());
+      if(parts.length<3||!isDate(parts[0]))continue;
+      const [date,typeRaw,title,showUp=""]=parts;
+      const type=TYPES[typeRaw]?typeRaw:"unknown";
+      if(!title)continue;
+      imported.push({
+        id:(crypto.randomUUID&&crypto.randomUUID())||String(Date.now()+imported.length),
+        type,title,showUp:type==="flight"?showUp:"",
+        start:date,end:date,note:"사진에서 가져옴",
+        color:TYPES[type].color
+      });
+    }
+    if(!imported.length){alert("등록할 일정이 없어. 후보를 날짜 | 유형 | 편명/일정 | Show-up 순서로 입력해 줘.");return;}
+    if(!confirm(imported.length+"개 일정을 근무표에 추가할까?"))return;
+    events.push(...imported);persist();viewDate=new Date(imported[0].start+"T12:00:00");render();closePhotoDialog();
+    alert(imported.length+"개 일정을 등록했어.");
+  });
+
   if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
   try { render(); } catch (error) { console.error("CREW ROSTER 초기화 오류:",error); $("eventCount").textContent="일정 데이터를 확인해 주세요."; }
 })();
