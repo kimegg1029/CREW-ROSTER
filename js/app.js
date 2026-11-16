@@ -51,8 +51,8 @@
       const dayClass=d.getDay()===0?"sunday":d.getDay()===6?"saturday":"";
       return '<tr class="'+dayClass+(key===today?" today":"")+(list.length?" has-event":"")+'" style="--row-color:'+escapeHtml(rowColor)+'">'+
         '<td class="date-cell">'+(m+1)+"/"+(i+1)+'</td><td class="day-cell">'+weekdays[d.getDay()]+'</td>'+
-        '<td class="showup">'+(showups||'<span class="empty-mark">—</span>')+'</td>'+
-        '<td><div class="schedule-list">'+(schedule||'<span class="empty-mark">—</span>')+'</div></td></tr>';
+        '<td><div class="schedule-list">'+(schedule||'<span class="empty-mark">—</span>')+'</div></td>'+
+        '<td class="showup">'+(showups||'<span class="empty-mark">—</span>')+'</td></tr>';
     }).join("");
   }
   function updateShowUpVisibility(){ $("showUpField").hidden=$("eventType").value!=="flight"; }
