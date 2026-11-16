@@ -169,4 +169,243 @@
     .legend span { display: flex; align-items: center; gap: 5px; }
     .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 
-    /* Bottom
+    /* Bottom Nav */
+    nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+      max-width: 540px;
+      margin: 0 auto;
+    }
+    nav span {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-sub);
+      cursor: pointer;
+      padding: 4px 16px;
+    }
+    nav span.active { color: var(--brand); }
+
+    /* Dialogs */
+    dialog {
+      border: none;
+      border-radius: 18px;
+      padding: 20px;
+      width: calc(100% - 32px);
+      max-width: 480px;
+      margin: auto;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      color: var(--text);
+    }
+    dialog::backdrop { background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(2px); }
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .dialog-header h2 { font-size: 17px; font-weight: 800; }
+    .dialog-desc { font-size: 13px; color: var(--text-sub); line-height: 1.5; margin-bottom: 12px; }
+    .status-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      margin: 10px 0;
+      color: var(--text);
+    }
+    textarea, input[type="text"], input[type="password"], input[type="month"] {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      margin-bottom: 10px;
+    }
+    textarea { min-height: 180px; line-height: 1.5; resize: vertical; }
+    .preview-img {
+      max-width: 100%;
+      max-height: 180px;
+      object-fit: contain;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+      display: block;
+    }
+    .dialog-footer { display: flex; gap: 8px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <div class="brand-sub">EASTAR CREW</div>
+        <h1>CREW ROSTER</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn-secondary" id="btn-open-manual">+ 직접 입력</button>
+        <button class="btn-primary" id="btn-open-ocr">📷 사진 인식</button>
+      </div>
+    </header>
+
+    <section class="month-bar">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="btn-secondary" id="btn-prev-month">◀</button>
+        <span class="month-title" id="current-month-label">2026-11</span>
+        <button class="btn-secondary" id="btn-next-month">▶</button>
+      </div>
+      <div class="summary-chips" id="month-summary">
+        <span>비행 <b>0</b></span>
+        <span>체류 <b>0</b></span>
+        <span>휴무 <b>0</b></span>
+      </div>
+    </section>
+
+    <section class="table-card" aria-label="월간 승무원 근무표">
+      <table>
+        <thead>
+          <tr>
+            <th>날짜</th>
+            <th>요일</th>
+            <th>편명 / 일정</th>
+            <th>Show-up</th>
+          </tr>
+        </thead>
+        <tbody id="roster-tbody"></tbody>
+      </table>
+    </section>
+
+    <div class="legend" aria-label="근무 배경색 안내">
+      <span><i style="background:var(--flight-badge)"></i>비행</span>
+      <span><i style="background:var(--layover-badge)"></i>해외체류</span>
+      <span><i style="background:var(--off-badge)"></i>휴무</span>
+      <span><i style="background:var(--etc-badge)"></i>기타</span>
+    </div>
+
+    <nav>
+      <span class="active" id="nav-roster">근무표</span>
+      <span role="button" id="nav-backup">백업</span>
+      <span role="button" id="nav-settings">설정</span>
+    </nav>
+  </main>
+
+  <!-- 1. 근무표 사진 AI 인식 다이얼로그 -->
+  <dialog id="ocr-dialog">
+    <div class="dialog-header">
+      <h2>근무표 사진 가져오기 (AI 인식)</h2>
+      <button class="btn-secondary" onclick="document.getElementById('ocr-dialog').close()">✕</button>
+    </div>
+    <p class="dialog-desc">
+      근무표 스크린샷을 선택하면 AI가 날짜와 편명, Show-up 시간을 자동으로 추출해 줘. 저장 전에 잘못된 부분만 확인해 줘.
+    </p>
+
+    <input type="file" id="ocr-file-input" accept="image/*" style="margin-bottom:10px;" />
+    <img id="ocr-preview" class="preview-img" alt="선택한 근무표 사진 미리보기" hidden />
+
+    <div class="status-box" id="ocr-status" aria-live="polite">사진을 선택해 줘. (설정 탭에 Gemini API 키 등록 필요)</div>
+
+    <p class="dialog-desc" style="margin-top:8px;">
+      한 줄에 하나씩 <b>날짜 | 유형 | 편명/일정 | Show-up</b> 순서야. 직접 수정도 가능해.
+    </p>
+    <textarea id="ocr-result-textarea" placeholder="2026-11-17 | 비행 | ZE601 ICN-NRT-ICN | 06:30"></textarea>
+
+    <div class="dialog-footer">
+      <button class="btn-secondary btn-full" onclick="document.getElementById('ocr-dialog').close()">취소</button>
+      <button class="btn-primary btn-full" id="btn-apply-ocr">근무표에 저장하기</button>
+    </div>
+  </dialog>
+
+  <!-- 2. 설정 다이얼로그 (API 키 관리) -->
+  <dialog id="settings-dialog">
+    <div class="dialog-header">
+      <h2>설정 (AI 인식 API 키)</h2>
+      <button class="btn-secondary" onclick="document.getElementById('settings-dialog').close()">✕</button>
+    </div>
+    <p class="dialog-desc">
+      고정밀 근무표 인식을 위해 <b>Google Gemini API 키</b>를 기기(브라우저)에 저장해 둬. 키는 외부 서버로 전송되지 않고 내 폰/PC에만 저장돼.
+    </p>
+    <label style="font-size:12px; font-weight:700; display:block; margin-bottom:4px;">Gemini API Key</label>
+    <input type="password" id="input-api-key" placeholder="AIzaSy..." />
+    <p class="dialog-desc" style="font-size:12px;">
+      * 발급 방법: Google AI Studio(aistudio.google.com) 접속 → 'Get API key' 클릭 후 무료 키 생성
+    </p>
+    <div class="dialog-footer">
+      <button class="btn-secondary btn-full" id="btn-delete-key">키 삭제</button>
+      <button class="btn-primary btn-full" id="btn-save-key">API 키 저장</button>
+    </div>
+  </dialog>
+
+  <!-- 3. 백업 및 복원 다이얼로그 -->
+  <dialog id="backup-dialog">
+    <div class="dialog-header">
+      <h2>데이터 백업 / 복원</h2>
+      <button class="btn-secondary" onclick="document.getElementById('backup-dialog').close()">✕</button>
+    </div>
+    <p class="dialog-desc">
+      아래 텍스트를 복사해 메모장이나 카카오톡 나와의 채팅에 보관해 두면 언제든 복원할 수 있어.
+    </p>
+    <textarea id="backup-textarea" placeholder="백업 JSON 데이터"></textarea>
+    <div class="dialog-footer">
+      <button class="btn-secondary btn-full" id="btn-copy-backup">백업 복사</button>
+      <button class="btn-primary btn-full" id="btn-restore-backup">데이터 복원</button>
+    </div>
+  </dialog>
+
+  <script>
+    const STORAGE_ROSTER = 'eastar_crew_roster_data_v1';
+    const STORAGE_API_KEY = 'eastar_crew_gemini_api_key';
+    const DAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
+
+    // 상태 관리
+    let currentYearMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+    let rosterData = JSON.parse(localStorage.getItem(STORAGE_ROSTER) || '{}');
+
+    function saveRosterData() {
+      localStorage.setItem(STORAGE_ROSTER, JSON.stringify(rosterData));
+      renderTable();
+    }
+
+    // 월간 테이블 렌더링
+    function renderTable() {
+      document.getElementById('current-month-label').textContent = currentYearMonth;
+      const [year, month] = currentYearMonth.split('-').map(Number);
+      const lastDay = new Date(year, month, 0).getDate();
+      const tbody = document.getElementById('roster-tbody');
+      tbody.innerHTML = '';
+
+      let countFlight = 0, countLayover = 0, countOff = 0;
+
+      for (let d = 1; d <= lastDay; d++) {
+        const dd = String(d).padStart(2, '0');
+        const dateStr = `${currentYearMonth}-${dd}`;
+        const dayIdx = new Date(year, month - 1, d).getDay();
+        const dayName = DAYS_KO[dayIdx];
+        const entry = rosterData[dateStr];
+
+        if (entry) {
+          if (entry.type === '비행') countFlight++;
+          else if (entry.type === '해외체류') countLayover++;
+          else if (entry.type === '휴무') countOff++;
+        }
+
+        const tr = document.createElement('tr');
+        if (entry?.type) tr.className = `type-${entry.type}`;
+
+        const dayClass = dayIdx === 0 ? 'sun' : (dayIdx === 6 ? 'sat' : '');
+        tr.innerHTML = `
+          <td class="${dayClass}">${dd}</td>
+          <td class="${dayClass}">${dayName}</td>
+          <td>
+            ${entry ? `<span class="badge ${entry.type}">${entry.type}</span>${escapeHtml(entry.schedule)}` : '<span style="color:#cbd5e1">-</span>'}
+          </td>
+          <td>${entry ? escapeHtml(entry.showUp || '-') : '-'}</td>
+        `;
+
+        // 행 클릭 시 개별 수정
+        tr.addEventListener('click', () => editSingleDay(
