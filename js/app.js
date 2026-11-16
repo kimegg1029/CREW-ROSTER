@@ -111,29 +111,63 @@
       $("ocrStatus").textContent="사진 준비 완료. 글자 인식을 시작해 줘.";
     }else{$("photoPreview").hidden=true;$("ocrStatus").textContent="사진을 선택해 줘.";}
   });
-  function suggestRowsFromOcr(text){
+  function suggestRowsFromOcrWords(words, imageWidth, imageHeight){
     const month=$("photoMonth").value||iso(new Date()).slice(0,7);
     const [year,monthNo]=month.split("-").map(Number);
-    const result=[];
-    for(const raw of text.split(/\n+/)){
-      const line=raw.replace(/\s+/g," ").trim();
-      if(!line)continue;
-      const flight=line.match(/\bZE\s?\d{2,4}\b/i);
-      const code=line.match(/\b(NS|DO|RDO|PV|SANLV|STBY|DH)\b/i);
-      const time=line.match(/\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/);
-      let day=null;
-      const date=line.match(/(?:^|\D)(\d{1,2})(?:일|日|\s|$)/);
-      if(date)day=Number(date[1]);
-      else{
-        const slash=line.match(/(?:^|\D)(\d{1,2})\/(\d{1,2})(?:\D|$)/);
-        if(slash)day=Number(slash[2]);
-      }
-      if(!day||day<1||day>31)continue;
-      const dateValue=year+"-"+String(monthNo).padStart(2,"0")+"-"+String(day).padStart(2,"0");
-      if(flight)result.push([dateValue,"flight",flight[0].replace(/\s/g,"").toUpperCase(),time?time[0].replace(".",":"):""].join(" | "));
-      else if(code)result.push([dateValue,code[1].toUpperCase(),code[1].toUpperCase(),""] .join(" | "));
+    const daysInMonth=new Date(year,monthNo,0).getDate();
+    const firstWeekday=new Date(year,monthNo-1,1).getDay();
+    const tokens=(words||[]).map(w=>{
+      const text=String(w.text||"").trim();
+      const box=w.bbox||{};
+      return {text,x:((box.x0||0)+(box.x1||0))/2,y:((box.y0||0)+(box.y1||0))/2,
+        top:box.y0||0,bottom:box.y1||0,confidence:Number(w.confidence||0)};
+    }).filter(w=>w.text);
+    // Calendar date numerals are isolated numeric OCR words. Cluster them by
+    // horizontal week-row position; this preserves the original table layout.
+    const anchors=tokens.filter(w=>/^\\d{1,2}$/.test(w.text)&&Number(w.text)>=1&&Number(w.text)<=31&&w.confidence>=20&&w.y<imageHeight*.82);
+    anchors.sort((a,b)=>a.y-b.y);
+    const groups=[];
+    for(const anchor of anchors){
+      let group=groups.find(g=>Math.abs(g.center-anchor.y)<imageHeight*.055);
+      if(!group){group={center:anchor.y,items:[]};groups.push(group);}
+      group.items.push(anchor);
+      group.center=group.items.reduce((s,x)=>s+x.y,0)/group.items.length;
     }
-    return result.join("\n");
+    groups.sort((a,b)=>a.center-b.center);
+    if(groups.length<3)return "";
+    const allX=anchors.map(w=>w.x);
+    const left=Math.max(0,Math.min(...allX)-imageWidth*.035);
+    const right=Math.min(imageWidth,Math.max(...allX)+imageWidth*.035);
+    const colWidth=(right-left)/7;
+    const output=[];
+    for(let gi=0;gi<groups.length;gi++){
+      const group=groups[gi];
+      const bandTop=group.center-imageHeight*.012;
+      const bandBottom=gi+1<groups.length?(group.center+groups[gi+1].center)/2:imageHeight;
+      for(const anchor of group.items){
+        const day=Number(anchor.text);
+        const col=Math.max(0,Math.min(6,Math.floor((anchor.x-left)/colWidth)));
+        const slot=(new Date(year,monthNo-1,1).getDay()+day-1);
+        // Skip dates belonging to adjacent months shown at the edges.
+        if(day>daysInMonth)continue;
+        const dateValue=year+"-"+String(monthNo).padStart(2,"0")+"-"+String(day).padStart(2,"0");
+        const cellWords=tokens.filter(w=>{
+          const wordCol=Math.max(0,Math.min(6,Math.floor((w.x-left)/colWidth)));
+          return wordCol===col&&w.y>=bandTop&&w.y<bandBottom&&
+            !(w===anchor);
+        }).sort((a,b)=>a.y-b.y||a.x-b.x);
+        const cellText=cellWords.map(w=>w.text).join(" ").toUpperCase();
+        const flights=[...cellText.matchAll(/\\bZE\\s?\\d{2,4}\\b/g)].map(m=>m[0].replace(/\\s/g,""));
+        const codes=[...cellText.matchAll(/\\b(NS|DO|RDO|PV|SANLV|STBY|DH)\\b/g)].map(m=>m[1]);
+        const times=[...cellText.matchAll(/\\b([01]?\\d|2[0-3])[:.]([0-5]\\d)\\b/g)].map(m=>m[0].replace(".",":"));
+        if(flights.length){
+          flights.forEach((flight,i)=>output.push([dateValue,"flight",flight,times[i]||times[0]||""].join(" | ")));
+        }else if(codes.length){
+          [...new Set(codes)].forEach(code=>output.push([dateValue,code,code,""].join(" | ")));
+        }
+      }
+    }
+    return [...new Set(output)].join("\\n");
   }
   $("runOcrButton").addEventListener("click",async()=>{
     if(!selectedRosterPhoto)return;
