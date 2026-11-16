@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="CREW ROSTER">
   <title>CREW ROSTER</title>
   <link rel="manifest" href="./manifest.json">
-  <link rel="stylesheet" href="./css/style.css?v=7">
+  <link rel="stylesheet" href="./css/style.css?v=8">
 </head>
 <body>
   <main class="app">
@@ -34,7 +34,7 @@
       <span><i style="--dot:#63a78c"></i>휴무</span>
       <span><i style="--dot:#d5a34d"></i>기타</span>
     </div>
-    <button id="addButton" class="add-button"><span>＋</span> 일정 추가</button>
+    <div class="main-actions"><button id="photoImportButton" class="photo-button" type="button">사진에서 가져오기</button><button id="addButton" class="add-button"><span>＋</span> 일정 추가</button></div>
     <nav class="bottom-nav"><span class="active">근무표</span><span id="backupButton" role="button" tabindex="0">백업</span><span id="settingsButton" role="button" tabindex="0">설정</span></nav>
   </main>
   <dialog id="eventDialog" class="event-dialog">
@@ -55,7 +55,21 @@
       <div class="form-actions"><button type="button" id="deleteEvent" class="delete-button" hidden>삭제</button><button type="submit" class="save-button">저장</button></div>
     </form>
   </dialog>
+  <dialog id="photoDialog" class="event-dialog photo-dialog">
+    <div class="dialog-head"><h2>근무표 사진 가져오기</h2><button type="button" id="closePhotoDialog" class="icon-button">×</button></div>
+    <p class="photo-help">근무표 사진을 선택하면 기기 안에서 글자를 인식해. 인식 결과는 틀릴 수 있으니 저장 전에 꼭 확인해 줘.</p>
+    <label class="photo-pick">사진 선택<input id="rosterPhoto" type="file" accept="image/*" capture="environment"></label>
+    <img id="photoPreview" class="photo-preview" alt="선택한 근무표 사진 미리보기" hidden>
+    <label>근무표 월<input id="photoMonth" type="month"></label>
+    <div id="ocrStatus" class="ocr-status" aria-live="polite">사진을 선택해 줘.</div>
+    <button id="runOcrButton" class="save-button photo-action" type="button" disabled>사진 글자 인식하기</button>
+    <label>인식된 원문<textarea id="ocrText" rows="5" placeholder="사진을 인식하면 결과가 여기에 표시돼."></textarea></label>
+    <p class="photo-help">아래 일정 후보는 한 줄에 하나씩 <b>날짜 | 유형 | 편명/일정 | Show-up</b> 순서야. 잘못 인식된 내용은 직접 수정해 줘.</p>
+    <label>가져올 일정 후보<textarea id="importRows" rows="6" placeholder="2026-11-17 | flight | ZE611 | 08:30&#10;2026-11-18 | NS | 해외체류 |"></textarea></label>
+    <div class="form-actions"><button id="closePhotoDialogBottom" class="delete-button" type="button">취소</button><button id="savePhotoRows" class="save-button" type="button">확인 후 일정 등록</button></div>
+  </dialog>
   <input id="importFile" type="file" accept="application/json,.json" hidden>
-  <script src="./js/app.js?v=7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="./js/app.js?v=8"></script>
 </body>
 </html>
