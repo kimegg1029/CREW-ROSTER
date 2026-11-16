@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>EASTAR CREW - CREW ROSTER</title>
   <style>
     :root {
@@ -211,53 +213,4 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
-    }
-    .dialog-header h2 { font-size: 17px; font-weight: 800; }
-    .dialog-desc { font-size: 13px; color: var(--text-sub); line-height: 1.5; margin-bottom: 12px; }
-    .status-box {
-      background: #f8fafc;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 13px;
-      margin: 10px 0;
-      color: var(--text);
-      word-break: break-word;
-    }
-    textarea, input[type="text"], input[type="password"] {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 13px;
-      font-family: inherit;
-      margin-bottom: 10px;
-    }
-    textarea { min-height: 170px; line-height: 1.5; resize: vertical; }
-    .preview-img {
-      max-width: 100%;
-      max-height: 180px;
-      object-fit: contain;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      margin-bottom: 8px;
-      display: block;
-    }
-    .dialog-footer { display: flex; gap: 8px; margin-top: 8px; }
-  </style>
-</head>
-<body>
-  <main>
-    <div id="global-error-banner" style="display:none; background:#fee2e2; color:#b91c1c; padding:10px; border-radius:10px; font-size:12px; margin-bottom:12px;"></div>
-
-    <header>
-      <div>
-        <div class="brand-sub">EASTAR CREW <span style="font-weight:400; color:#94a3b8;">v2.2</span></div>
-        <h1>CREW ROSTER</h1>
-      </div>
-      <div class="header-actions">
-        <button type="button" class="btn-secondary" id="btn-open-manual">+ 직접 입력</button>
-        <button type="button" class="btn-primary" id="btn-open-ocr">📷 사진 인식</button>
-      </div>
-    </header>
+      margin-
