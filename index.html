@@ -22,33 +22,36 @@
       <div><div id="monthLabel" class="month-label"></div><div id="eventCount" class="month-subtitle"></div></div>
       <button id="nextMonth" class="month-arrow" aria-label="다음 달">›</button>
     </section>
-    <section class="calendar-wrap">
-      <div class="weekdays"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>
-      <div id="calendar" class="calendar" aria-label="월간 근무 달력"></div>
+    <section class="roster-wrap" aria-label="월간 승무원 근무표">
+      <table class="roster-table">
+        <thead><tr><th>날짜</th><th>요일</th><th>Show-up</th><th>편명 / 일정</th></tr></thead>
+        <tbody id="rosterBody"></tbody>
+      </table>
     </section>
-    <section class="legend" aria-label="일정 종류">
+    <div class="legend" aria-label="근무 배경색 안내">
       <span><i style="--dot:#e46b68"></i>비행</span>
       <span><i style="--dot:#8c9bd8"></i>해외체류</span>
       <span><i style="--dot:#63a78c"></i>휴무</span>
       <span><i style="--dot:#d5a34d"></i>기타</span>
-    </section>
+    </div>
     <button id="addButton" class="add-button"><span>＋</span> 일정 추가</button>
-    <nav class="bottom-nav"><span class="active">달력</span><span id="backupButton" role="button" tabindex="0">백업</span><span id="settingsButton" role="button" tabindex="0">설정</span></nav>
+    <nav class="bottom-nav"><span class="active">근무표</span><span id="backupButton" role="button" tabindex="0">백업</span><span id="settingsButton" role="button" tabindex="0">설정</span></nav>
   </main>
   <dialog id="eventDialog" class="event-dialog">
     <form id="eventForm">
       <div class="dialog-head"><h2 id="dialogTitle">일정 추가</h2><button type="button" id="closeDialog" class="icon-button">×</button></div>
-      <label>일정 종류
+      <label>근무 유형
         <select id="eventType">
-          <option value="flight">비행</option><option value="NS">NS · 해외체류</option><option value="DO">DO · DAY OFF</option>
-          <option value="RDO">RDO · 지정 OFF</option><option value="PV">PV · 생리휴가</option><option value="SANLV">SANLV · 본사 교육</option>
-          <option value="STBY">STBY · 본사대기</option><option value="DH">DH · 근무 없는 항공이동</option><option value="personal">개인 일정</option><option value="unknown">미확인</option>
+          <option value="flight">비행</option><option value="NS">해외체류</option><option value="DO">휴무</option>
+          <option value="RDO">지정 OFF</option><option value="PV">생리휴가</option><option value="SANLV">본사 교육</option>
+          <option value="STBY">본사대기</option><option value="DH">항공이동</option><option value="personal">개인 일정</option><option value="unknown">미확인</option>
         </select>
       </label>
-      <label>표시 이름 / 편명<input id="eventTitle" maxlength="60" placeholder="예: ZE611 또는 생일" required></label>
+      <label>편명 / 일정명<input id="eventTitle" maxlength="60" placeholder="예: ZE611" required></label>
+      <label id="showUpField">Show-up 시간<input id="showUpTime" type="time"></label>
       <div class="date-row"><label>시작일<input id="startDate" type="date" required></label><label>종료일<input id="endDate" type="date" required></label></div>
       <label>메모<input id="eventNote" maxlength="160" placeholder="선택 입력"></label>
-      <label>색상<input id="eventColor" type="color" value="#e46b68"></label>
+      <label>배경색<input id="eventColor" type="color" value="#e46b68"></label>
       <div class="form-actions"><button type="button" id="deleteEvent" class="delete-button" hidden>삭제</button><button type="submit" class="save-button">저장</button></div>
     </form>
   </dialog>
