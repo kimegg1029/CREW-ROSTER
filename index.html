@@ -15,20 +15,22 @@
       --text-sub: #64748b;
       --border: #e2e8f0;
       --brand: #d92632;
-      --qt-bg: #eff6ff;
+
+      /* 근무 유형별 배경 및 배지 컬러 */
+      --qt-bg: #dbeafe;
       --qt-badge: #2563eb;
-      --layover-bg: #faf5ff;
+      --layover-bg: #ede9fe;
       --layover-badge: #7c3aed;
-      --dh-bg: #fdf4ff;
+      --dh-bg: #fae8ff;
       --dh-badge: #c026d3;
-      --pkg-bg: #fff7ed;
-      --pkg-badge: #ea580c;
-      --off-bg: #f0fdf4;
+      --off-bg: #dcfce7;
       --off-badge: #16a34a;
-      --etc-bg: #fffbeb;
+      --etc-bg: #fef3c7;
       --etc-badge: #d97706;
+
+      --pkg-border: #8b5cf6;
       --today-bg: #fff1f2;
-      --today-border: #f43f5e;
+      --today-accent: #f43f5e;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -36,21 +38,20 @@
       font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", sans-serif;
       background: var(--bg);
       color: var(--text);
-      padding-bottom: 24px;
+      padding-bottom: 32px;
       -webkit-font-smoothing: antialiased;
     }
 
     main {
-      max-width: 540px;
+      max-width: 560px;
       margin: 0 auto;
-      padding: 12px;
+      padding: 14px 12px;
+      min-height: 100vh;
     }
 
     header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
+      text-align: center;
+      margin-bottom: 10px;
     }
     .brand-sub {
       font-size: 10px;
@@ -63,53 +64,29 @@
       font-weight: 800;
       letter-spacing: -0.5px;
     }
-    .header-actions {
-      display: flex;
-      gap: 6px;
-    }
 
-    button {
-      font-family: inherit;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 650;
-      padding: 8px 12px;
-      font-size: 12px;
-    }
-    button:active { opacity: 0.7; transform: scale(0.98); }
-    .btn-primary { background: var(--brand); color: #fff; }
-    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
-    .btn-full { width: 100%; padding: 12px; font-size: 14px; }
-
-    /* 편집 모드 패널 */
-    .edit-toolbar {
-      display: none;
-      background: #e2e8f0;
-      padding: 8px 12px;
-      border-radius: 10px;
-      margin-bottom: 10px;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-    .edit-toolbar.show { display: flex; }
-
+    /* 월 표기 (가운데 정렬, 화살표 제거) */
     .month-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       background: var(--surface);
-      padding: 10px 14px;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      padding: 12px 16px;
+      border-radius: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
       margin-bottom: 10px;
+      text-align: center;
+      position: relative;
     }
-    .month-title { font-size: 16px; font-weight: 700; }
+    .month-title {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
     .summary-chips {
       display: flex;
-      gap: 6px;
+      justify-content: center;
+      gap: 10px;
       font-size: 11px;
       color: var(--text-sub);
+      margin-top: 4px;
     }
     .summary-chips b { color: var(--text); }
 
@@ -117,77 +94,136 @@
       background: var(--surface);
       border-radius: 14px;
       overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
       border: 1px solid var(--border);
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 11.5px;
+      font-size: 12px;
+      table-layout: fixed;
     }
     thead {
       background: #f8fafc;
       border-bottom: 1px solid var(--border);
       color: var(--text-sub);
-      font-size: 10.5px;
+      font-size: 11px;
     }
     th, td {
-      padding: 8px 6px;
-      text-align: left;
+      padding: 9px 4px;
+      text-align: center;
+      vertical-align: middle;
       border-bottom: 1px solid #f1f5f9;
+      word-break: keep-all;
     }
-    th:nth-child(1), td:nth-child(1) { width: 38px; text-align: center; font-weight: 700; }
-    th:nth-child(2), td:nth-child(2) { width: 30px; text-align: center; }
-    th:nth-child(3), td:nth-child(3) { width: 56px; }
-    th:nth-child(5), td:nth-child(5) { width: 44px; text-align: right; font-weight: 600; }
-    th:nth-child(6), td:nth-child(6) { width: 36px; text-align: center; cursor: pointer; }
 
-    tr.type-QuickTurn { background: var(--qt-bg); }
-    tr.type-Layover { background: var(--layover-bg); }
-    tr.type-DH { background: var(--dh-bg); }
-    tr.type-패키지 { background: var(--pkg-bg); }
-    tr.type-휴무 { background: var(--off-bg); }
-    tr.type-기타 { background: var(--etc-bg); }
+    /* 칸 너비 최적화 (날짜/요일/구분/Show/Oju 여유 확보) */
+    th:nth-child(1), td:nth-child(1) { width: 44px; font-weight: 700; }
+    th:nth-child(2), td:nth-child(2) { width: 36px; }
+    th:nth-child(3), td:nth-child(3) { width: 74px; cursor: pointer; }
+    th:nth-child(4), td:nth-child(4) { width: auto; }
+    th:nth-child(5), td:nth-child(5) { width: 64px; white-space: nowrap; font-weight: 600; font-variant-numeric: tabular-nums; }
+    th:nth-child(6), td:nth-child(6) { width: 48px; white-space: nowrap; cursor: pointer; }
 
+    /* 근무 유형별 배경색 (투명 방지 확실한 지정) */
+    tr.type-QuickTurn { background-color: var(--qt-bg); }
+    tr.type-Layover { background-color: var(--layover-bg); }
+    tr.type-DH { background-color: var(--dh-bg); }
+    tr.type-휴무 { background-color: var(--off-bg); }
+    tr.type-기타 { background-color: var(--etc-bg); }
+
+    /* 오늘 날짜 강조 */
+    tr.is-today td:first-child {
+      position: relative;
+      color: var(--brand);
+    }
     tr.is-today {
-      background: var(--today-bg) !important;
-      outline: 2px solid var(--today-border);
-      outline-offset: -2px;
-      font-weight: bold;
+      box-shadow: inset 3px 0 0 var(--today-accent), inset -3px 0 0 var(--today-accent);
     }
+
+    /* Pakage 연속 구간 테두리 그룹핑 */
+    tr.pkg-row td:first-child { border-left: 3px solid var(--pkg-border); }
+    tr.pkg-row td:last-child { border-right: 3px solid var(--pkg-border); }
+    tr.pkg-start td { border-top: 2.5px solid var(--pkg-border); }
+    tr.pkg-end td { border-bottom: 2.5px solid var(--pkg-border); }
 
     .sun { color: #ef4444; }
     .sat { color: #3b82f6; }
 
     .badge {
       display: inline-block;
-      font-size: 9px;
+      font-size: 10px;
       font-weight: 700;
-      padding: 2px 4px;
-      border-radius: 4px;
+      padding: 3px 6px;
+      border-radius: 5px;
       color: #fff;
-      text-align: center;
+      line-height: 1.1;
+      user-select: none;
     }
     .badge.QuickTurn { background: var(--qt-badge); }
     .badge.Layover { background: var(--layover-badge); }
     .badge.DH { background: var(--dh-badge); }
-    .badge.패키지 { background: var(--pkg-badge); }
     .badge.휴무 { background: var(--off-badge); }
     .badge.기타 { background: var(--etc-badge); }
+    .badge.empty { background: #e2e8f0; color: #94a3b8; }
+
+    .pkg-tag {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--pkg-border);
+      border: 1px solid var(--pkg-border);
+      border-radius: 4px;
+      padding: 0 3px;
+      margin-right: 3px;
+      vertical-align: middle;
+    }
 
     .legend {
       display: flex;
       justify-content: center;
       flex-wrap: wrap;
       gap: 10px;
-      margin-top: 10px;
+      margin-top: 12px;
       font-size: 11px;
       color: var(--text-sub);
     }
     .legend span { display: flex; align-items: center; gap: 4px; }
     .legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
 
-    /* 감성적인 모달 */
+    /* 하단 편집 영역 */
+    .bottom-controls {
+      margin-top: 16px;
+      text-align: center;
+    }
+    .edit-toolbar {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 10px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      gap: 6px;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .edit-toolbar.show { display: flex; }
+
+    button {
+      font-family: inherit;
+      border: none;
+      border-radius: 9px;
+      cursor: pointer;
+      font-weight: 650;
+      padding: 9px 14px;
+      font-size: 12.5px;
+    }
+    button:active { opacity: 0.75; transform: scale(0.98); }
+    .btn-primary { background: var(--brand); color: #fff; }
+    .btn-secondary { background: #f1f5f9; color: var(--text); border: 1px solid var(--border); }
+    .btn-full { width: 100%; padding: 12px; font-size: 14px; }
+
+    /* 바텀시트 모달 */
     .modal-backdrop {
       display: none;
       position: fixed;
@@ -201,14 +237,14 @@
     .modal-backdrop.open { display: flex; }
     .modal-box {
       background: #fff;
-      border-radius: 20px 20px 0 0;
-      padding: 22px;
+      border-radius: 22px 22px 0 0;
+      padding: 22px 20px calc(22px + env(safe-area-inset-bottom));
       width: 100%;
-      max-width: 540px;
-      max-height: 85vh;
+      max-width: 560px;
+      max-height: 88vh;
       overflow-y: auto;
       box-shadow: 0 -10px 30px rgba(0,0,0,0.15);
-      animation: slideUp 0.25s ease-out;
+      animation: slideUp 0.22s ease-out;
     }
     @keyframes slideUp {
       from { transform: translateY(100%); }
@@ -218,64 +254,113 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
     .dialog-header h2 { font-size: 17px; font-weight: 800; }
-    .dialog-desc { font-size: 12.5px; color: var(--text-sub); line-height: 1.4; margin-bottom: 12px; }
-    
-    .type-toggle-btn {
-      width: 100%;
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 14px;
+    .dialog-desc { font-size: 12px; color: var(--text-sub); line-height: 1.45; margin-bottom: 12px; }
+
+    .field-label {
+      font-size: 11.5px;
       font-weight: 700;
-      border: 1px solid var(--border);
-      background: #f8fafc;
-      margin-bottom: 10px;
-      cursor: pointer;
-      text-align: center;
-      color: var(--brand);
+      color: var(--text-sub);
+      display: block;
+      margin-bottom: 6px;
     }
 
-    textarea, input[type="text"] {
+    input[type="text"], textarea {
       width: 100%;
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 13px;
+      padding: 11px 12px;
+      font-size: 13.5px;
       font-family: inherit;
-      margin-bottom: 10px;
-      background: #fcfcfc;
+      margin-bottom: 14px;
+      background: #f8fafc;
     }
-    textarea { min-height: 120px; line-height: 1.4; resize: vertical; }
-    .dialog-footer { display: flex; gap: 8px; margin-top: 10px; }
+    textarea { min-height: 140px; line-height: 1.5; resize: vertical; }
+
+    /* Pakage 체크 스위치 카드 */
+    .pkg-toggle-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #faf5ff;
+      border: 1px solid #ddd6fe;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      cursor: pointer;
+    }
+    .pkg-toggle-card span {
+      font-size: 13px;
+      font-weight: 700;
+      color: #6d28d9;
+    }
+    .pkg-toggle-card input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--pkg-border);
+    }
+
+    /* 24시간제 & 10분 단위 스크롤 휠 피커 */
+    .wheel-picker-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px;
+      margin-bottom: 14px;
+      position: relative;
+    }
+    .wheel-col {
+      width: 72px;
+      height: 114px;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      text-align: center;
+      scrollbar-width: none;
+    }
+    .wheel-col::-webkit-scrollbar { display: none; }
+    .wheel-item {
+      height: 38px;
+      line-height: 38px;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-sub);
+      scroll-snap-align: center;
+      cursor: pointer;
+    }
+    .wheel-item.selected {
+      color: var(--brand);
+      font-size: 18px;
+    }
+    .wheel-spacer { height: 38px; }
+    .wheel-highlight {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      top: 46px;
+      height: 38px;
+      border-top: 1.5px solid #cbd5e1;
+      border-bottom: 1.5px solid #cbd5e1;
+      pointer-events: none;
+    }
+
+    .dialog-footer { display: flex; gap: 8px; margin-top: 8px; }
   </style>
 </head>
 <body>
   <main id="swipe-container">
     <header>
-      <div>
-        <div class="brand-sub">EASTAR CREW</div>
-        <h1>CREW ROSTER</h1>
-      </div>
-      <div class="header-actions">
-        <button type="button" class="btn-secondary" id="btn-toggle-edit">편집</button>
-      </div>
+      <div class="brand-sub">EASTAR CREW</div>
+      <h1>CREW ROSTER</h1>
     </header>
 
-    <!-- 편집 모드 시에만 나타나는 툴바 -->
-    <div class="edit-toolbar" id="edit-toolbar">
-      <button type="button" class="btn-secondary" id="btn-open-ocr" style="flex:1;">일괄 입력</button>
-      <button type="button" class="btn-secondary" id="btn-open-backup" style="flex:1;">백업/복원</button>
-      <button type="button" class="btn-secondary" id="btn-clear-old" style="flex:1;">지난데이터 정리</button>
-    </div>
-
     <section class="month-bar">
-      <div style="display:flex; align-items:center; gap:6px;">
-        <button type="button" class="btn-secondary" id="btn-prev-month">◀</button>
-        <span class="month-title" id="current-month-label">11월</span>
-        <button type="button" class="btn-secondary" id="btn-next-month">▶</button>
-      </div>
+      <div class="month-title" id="current-month-label">11월</div>
       <div class="summary-chips" id="month-summary">
         <span>QT <b>0</b></span>
         <span>LAY <b>0</b></span>
@@ -292,7 +377,7 @@
             <th>요일</th>
             <th>구분</th>
             <th>편명 / 일정</th>
-            <th>Show</th>
+            <th>Show up</th>
             <th>Oju</th>
           </tr>
         </thead>
@@ -304,27 +389,48 @@
       <span><i style="background:var(--qt-badge)"></i>QuickTurn</span>
       <span><i style="background:var(--layover-badge)"></i>Layover</span>
       <span><i style="background:var(--dh-badge)"></i>DH</span>
-      <span><i style="background:var(--pkg-badge)"></i>패키지</span>
       <span><i style="background:var(--off-badge)"></i>휴무</span>
+      <span><i style="background:var(--pkg-border)"></i>Pakage 구간</span>
+    </div>
+
+    <!-- 맨 아래 편집 버튼 및 펼쳐지는 도구 모음 -->
+    <div class="bottom-controls">
+      <div class="edit-toolbar" id="edit-toolbar">
+        <button type="button" class="btn-secondary" id="btn-open-manual" style="flex:1;">Manual</button>
+        <button type="button" class="btn-secondary" id="btn-copy-prompt" style="flex:1;">AI 프롬프트 복사</button>
+        <button type="button" class="btn-secondary" id="btn-open-backup" style="flex:1;">백업/복원</button>
+      </div>
+      <button type="button" class="btn-secondary" id="btn-toggle-edit" style="width:120px;">편집</button>
     </div>
   </main>
 
-  <!-- 일정 수정 팝업 (바텀시트) -->
+  <!-- 행 클릭 시 뜨는 상세 편집 바텀시트 -->
   <div class="modal-backdrop" id="edit-dialog">
     <div class="modal-box">
       <div class="dialog-header">
-        <h2 id="modal-date-title">11월 17일 일정 수정</h2>
+        <h2 id="modal-date-title">11월 17일 일정 편집</h2>
         <button type="button" class="btn-secondary" data-close="edit-dialog">✕</button>
       </div>
-      <p class="dialog-desc">근무 유형을 누르면 순차적으로 변경됩니다.</p>
-      
-      <button type="button" class="type-toggle-btn" id="modal-type-btn">QuickTurn</button>
-      
-      <label style="font-size:11px; font-weight:700; color:var(--text-sub); display:block; margin-bottom:4px;">편명 / 일정</label>
-      <input type="text" id="modal-schedule-input" placeholder="예: ZE601 ICN-NRT" />
 
-      <label style="font-size:11px; font-weight:700; color:var(--text-sub); display:block; margin-bottom:4px;">Show-up 시간</label>
-      <input type="text" id="modal-showup-input" placeholder="예: 06:30 또는 -" />
+      <label class="pkg-toggle-card" for="modal-pkg-checkbox">
+        <span>📦 Pakage 구간 포함 (연속 테두리 표시)</span>
+        <input type="checkbox" id="modal-pkg-checkbox" />
+      </label>
+
+      <label class="field-label">편명 / 일정</label>
+      <input type="text" id="modal-schedule-input" placeholder="예: ZE601 ICN-NRT 또는 DO" />
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <label class="field-label" style="margin:0;">Show up 시간 (24시간 / 10분 단위)</label>
+        <button type="button" id="btn-clear-showup" style="padding:3px 8px; font-size:11px; background:#e2e8f0; color:#475569;">시간 없음(-)</button>
+      </div>
+
+      <div class="wheel-picker-wrap" id="showup-wheel-wrap">
+        <div class="wheel-highlight"></div>
+        <div class="wheel-col" id="wheel-hour"></div>
+        <span style="font-weight:800; font-size:18px;">:</span>
+        <div class="wheel-col" id="wheel-min"></div>
+      </div>
 
       <div class="dialog-footer">
         <button type="button" class="btn-secondary" id="modal-btn-delete" style="color:#ef4444; border-color:#fca5a5;">일정 삭제</button>
@@ -333,23 +439,26 @@
     </div>
   </div>
 
-  <!-- 일괄 입력 팝업 -->
-  <div class="modal-backdrop" id="ocr-dialog">
+  <!-- Manual 일괄 입력 바텀시트 -->
+  <div class="modal-backdrop" id="manual-dialog">
     <div class="modal-box">
       <div class="dialog-header">
-        <h2>근무표 일괄 입력</h2>
-        <button type="button" class="btn-secondary" data-close="ocr-dialog">✕</button>
+        <h2>Manual 일괄 입력</h2>
+        <button type="button" class="btn-secondary" data-close="manual-dialog">✕</button>
       </div>
-      <p class="dialog-desc">YYYY-MM-DD | 유형 | 일정 | Show-up 형식으로 입력하세요.</p>
-      <textarea id="ocr-result-textarea" placeholder="2026-11-01 | QuickTurn | ZE861 | -"></textarea>
+      <p class="dialog-desc">
+        <b>YYYY-MM-DD | 구분 | 일정 | Show-up</b> 형식으로 입력하세요.<br/>
+        (구분: QuickTurn, Layover, DH, 휴무, 기타 / 끝에 <b>| Pakage</b> 추가 가능)
+      </p>
+      <textarea id="manual-textarea" placeholder="2026-11-17 | QuickTurn | ZE536 | 06:30"></textarea>
       <div class="dialog-footer">
-        <button type="button" class="btn-secondary btn-full" data-close="ocr-dialog">취소</button>
-        <button type="button" class="btn-primary btn-full" id="btn-apply-ocr">저장하기</button>
+        <button type="button" class="btn-secondary btn-full" data-close="manual-dialog">취소</button>
+        <button type="button" class="btn-primary btn-full" id="btn-apply-manual">저장하기</button>
       </div>
     </div>
   </div>
 
-  <!-- 백업/복원 팝업 -->
+  <!-- 백업/복원 바텀시트 -->
   <div class="modal-backdrop" id="backup-dialog">
     <div class="modal-box">
       <div class="dialog-header">
@@ -367,50 +476,79 @@
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for(var i = 0; i < registrations.length; i++) registrations[i].unregister();
+        for (var i = 0; i < registrations.length; i++) registrations[i].unregister();
       });
     }
 
-    var STORAGE_ROSTER = 'eastar_crew_roster_data_v3';
+    // 스케줄 데이터와 Oju 독립 데이터를 완전히 분리하여 저장
+    var STORAGE_ROSTER = 'eastar_crew_roster_v4';
+    var STORAGE_OJU = 'eastar_crew_oju_v4';
     var DAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
-    var TYPES_ORDER = ['QuickTurn', 'Layover', 'DH', '패키지', '휴무', '기타'];
+    var TYPES_ORDER = ['QuickTurn', 'Layover', 'DH', '휴무', '기타'];
+
+    var AI_PROMPT_TEXT =
+      '너는 이스타항공(ZE) 승무원 월간 근무표 파서야.\n' +
+      '제공된 사진이나 텍스트의 모든 날짜별 스케줄을 아래 규칙에 맞춰 YYYY-MM-DD | 구분 | 일정 | Show-up 형식의 텍스트로만 변환해 줘. 다른 설명은 하지 마.\n\n' +
+      '[규칙]\n' +
+      '1. date: "YYYY-MM-DD" 형식 (연월 정보가 없으면 현재 월 기준)\n' +
+      '2. type: 반드시 "QuickTurn", "Layover", "DH", "휴무", "기타" 중 하나로 매칭\n' +
+      '3. schedule: 편명 및 노선 또는 일정명 (예: "ZE601 ICN-NRT", "DO" 등)\n' +
+      '4. showUp: 출근 시각 "HH:MM" (24시간제, 출근 시각이 없으면 "-")\n' +
+      '5. 청주공항 연속근무 등 패키지 일정인 경우 맨 뒤에 " | Pakage" 를 붙여줘.';
 
     var now = new Date();
     var currentYearMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
     var rosterData = {};
+    var ojuData = {};
     var editingDateStr = null;
-    var editingTypeIndex = 0;
+    var selectedHour = '06';
+    var selectedMin = '00';
+    var isNoShowUp = false;
 
     try {
-      var saved = JSON.parse(localStorage.getItem(STORAGE_ROSTER) || '{}');
-      if (saved && typeof saved === 'object' && !Array.isArray(saved)) rosterData = saved;
-    } catch (e) { rosterData = {}; }
-
-    function cleanOldData() {
-      var todayObj = new Date();
-      todayObj.setHours(0,0,0,0);
-      var cutoffDate = new Date(todayObj);
-      cutoffDate.setDate(cutoffDate.getDate() - 2);
-
-      var keys = Object.keys(rosterData);
-      var count = 0;
-      for (var i = 0; i < keys.length; i++) {
-        var dObj = new Date(keys[i]);
-        if (!isNaN(dObj.getTime()) && dObj < cutoffDate) {
-          delete rosterData[keys[i]];
-          count++;
-        }
-      }
-      if (count > 0) localStorage.setItem(STORAGE_ROSTER, JSON.stringify(rosterData));
+      var savedR = JSON.parse(localStorage.getItem(STORAGE_ROSTER) || '{}');
+      if (savedR && typeof savedR === 'object' && !Array.isArray(savedR)) rosterData = savedR;
+      var savedO = JSON.parse(localStorage.getItem(STORAGE_OJU) || '{}');
+      if (savedO && typeof savedO === 'object' && !Array.isArray(savedO)) ojuData = savedO;
+    } catch (e) {
+      rosterData = {};
+      ojuData = {};
     }
-    cleanOldData();
+
+    // 오늘 기준 15일 전 날짜 객체 구하기 (예: 오늘이 17일이면 2일부터 표시, 1일 행은 아예 삭제)
+    function getCutoffDate() {
+      var t = new Date();
+      t.setHours(0, 0, 0, 0);
+      t.setDate(t.getDate() - 15);
+      return t;
+    }
+
+    // 스토리지에서도 15일 이전 지난 데이터 영구 정리
+    function purgeOldStorage() {
+      var cutoff = getCutoffDate();
+      var rKeys = Object.keys(rosterData);
+      for (var i = 0; i < rKeys.length; i++) {
+        var d = new Date(rKeys[i] + 'T00:00:00');
+        if (!isNaN(d.getTime()) && d < cutoff) delete rosterData[rKeys[i]];
+      }
+      var oKeys = Object.keys(ojuData);
+      for (var j = 0; j < oKeys.length; j++) {
+        var od = new Date(oKeys[j] + 'T00:00:00');
+        if (!isNaN(od.getTime()) && od < cutoff) delete ojuData[oKeys[j]];
+      }
+      localStorage.setItem(STORAGE_ROSTER, JSON.stringify(rosterData));
+      localStorage.setItem(STORAGE_OJU, JSON.stringify(ojuData));
+    }
+    purgeOldStorage();
+
+    function saveAll() {
+      localStorage.setItem(STORAGE_ROSTER, JSON.stringify(rosterData));
+      localStorage.setItem(STORAGE_OJU, JSON.stringify(ojuData));
+      renderTable();
+    }
 
     function openModal(id) { document.getElementById(id).classList.add('open'); }
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-    function saveRosterData() {
-      localStorage.setItem(STORAGE_ROSTER, JSON.stringify(rosterData));
-      renderTable();
-    }
 
     function escapeHtml(str) {
       return String(str).replace(/[&<>"']/g, function (m) {
@@ -423,12 +561,17 @@
       return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
     }
 
+    function getDateOffsetStr(dateStr, offsetDays) {
+      var parts = dateStr.split('-');
+      var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]) + offsetDays);
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
     function renderTable() {
       var parts = currentYearMonth.split('-');
       var year = Number(parts[0]);
       var month = Number(parts[1]);
-      
-      // 월 표기를 간단하게 "11월" 형식으로 표시
+
       document.getElementById('current-month-label').textContent = month + '월';
 
       var lastDay = new Date(year, month, 0).getDate();
@@ -437,13 +580,22 @@
 
       var countQT = 0, countLay = 0, countDH = 0, countOff = 0;
       var todayStr = getTodayStr();
+      var cutoffDate = getCutoffDate();
 
       for (var d = 1; d <= lastDay; d++) {
         var dd = String(d).padStart(2, '0');
         var dateStr = currentYearMonth + '-' + dd;
-        var dayIdx = new Date(year, month - 1, d).getDay();
+        var rowDateObj = new Date(year, month - 1, d);
+
+        // 오늘 기준 15일 이전 날짜 행 자체를 아예 렌더링하지 않음 (날짜 삭제)
+        if (rowDateObj < cutoffDate) {
+          continue;
+        }
+
+        var dayIdx = rowDateObj.getDay();
         var dayName = DAYS_KO[dayIdx];
         var entry = rosterData[dateStr];
+        var hasOju = !!ojuData[dateStr];
 
         if (entry) {
           if (entry.type === 'QuickTurn') countQT++;
@@ -455,36 +607,75 @@
         var tr = document.createElement('tr');
         var isToday = (dateStr === todayStr);
         var rowClasses = [];
-        if (entry && entry.type) rowClasses.push('type-' + entry.type);
-        if (isToday) rowClasses.push('is-today');
+
+        if (entry && entry.type) {
+          rowClasses.push('type-' + entry.type);
+        }
+        if (isToday) {
+          rowClasses.push('is-today');
+        }
+
+        // Pakage 연속 구간 테두리 계산
+        var isPkg = !!(entry && entry.isPakage);
+        if (isPkg) {
+          rowClasses.push('pkg-row');
+          var prevDateStr = getDateOffsetStr(dateStr, -1);
+          var nextDateStr = getDateOffsetStr(dateStr, 1);
+          var prevPkg = !!(rosterData[prevDateStr] && rosterData[prevDateStr].isPakage);
+          var nextPkg = !!(rosterData[nextDateStr] && rosterData[nextDateStr].isPakage);
+          if (!prevPkg) rowClasses.push('pkg-start');
+          if (!nextPkg) rowClasses.push('pkg-end');
+        }
+
         if (rowClasses.length > 0) tr.className = rowClasses.join(' ');
 
         var dayClass = dayIdx === 0 ? 'sun' : (dayIdx === 6 ? 'sat' : '');
-        if (isToday) dayClass += ' sun';
 
-        var badgeHtml = entry ? '<span class="badge ' + entry.type + '">' + entry.type + '</span>' : '<span style="color:#cbd5e1">-</span>';
-        var scheduleHtml = entry ? escapeHtml(entry.schedule || '-') : '<span style="color:#cbd5e1">-</span>';
-        var showUpHtml = entry ? escapeHtml(entry.showUp || '-') : '-';
-        
-        // Oju 칸에 저장된 바이알(Vial) 표시 여부
-        var vhMark = (entry && entry.vial) ? '🧪' : '<span style="color:#e2e8f0; font-size:10px;">·</span>';
+        var badgeHtml = (entry && entry.type)
+          ? '<span class="badge ' + entry.type + '">' + entry.type + '</span>'
+          : '<span class="badge empty">-</span>';
+
+        var scheduleText = entry && entry.schedule ? escapeHtml(entry.schedule) : '<span style="color:#cbd5e1">-</span>';
+        var pkgTagHtml = isPkg ? '<span class="pkg-tag">PKG</span>' : '';
+        var showUpHtml = (entry && entry.showUp && entry.showUp !== '-')
+          ? escapeHtml(entry.showUp.replace(':', ' : '))
+          : '<span style="color:#cbd5e1">-</span>';
+
+        var ojuMark = hasOju ? '🧪' : '<span style="color:#cbd5e1;">·</span>';
 
         tr.innerHTML =
-          '<td class="' + dayClass + '">' + dd + (isToday ? '<div style="font-size:8px; color:var(--brand);">오늘</div>' : '') + '</td>' +
+          '<td class="' + dayClass + '">' + dd + (isToday ? '<div style="font-size:8px; color:var(--brand); line-height:1;">TODAY</div>' : '') + '</td>' +
           '<td class="' + dayClass + '">' + dayName + '</td>' +
-          '<td>' + badgeHtml + '</td>' +
-          '<td>' + scheduleHtml + '</td>' +
-          '<td>' + showUpHtml + '</td>' +
-          '<td style="text-align:center;" class="oju-cell">' + vhMark + '</td>';
+          '<td class="cell-type">' + badgeHtml + '</td>' +
+          '<td class="cell-edit">' + pkgTagHtml + scheduleText + '</td>' +
+          '<td class="cell-edit">' + showUpHtml + '</td>' +
+          '<td class="cell-oju">' + ojuMark + '</td>';
 
-        // 행 클릭 시 일정 수정 팝업 열기
         (function (targetDate) {
-          tr.querySelector('td:not(:last-child)').onclick = function () { openEditModal(targetDate); };
-          // Oju 칸 클릭 시 Vial 토글
-          tr.querySelector('.oju-cell').onclick = function (e) {
+          // 1) 구분 칸 터치: 창을 띄우지 않고 인라인 순차 변경
+          tr.querySelector('.cell-type').onclick = function (e) {
             e.stopPropagation();
-            toggleVial(targetDate);
+            cycleRowType(targetDate);
           };
+
+          // 2) Oju 칸 터치: 옆 스케줄과 완전히 독립적으로 Vial 토글
+          tr.querySelector('.cell-oju').onclick = function (e) {
+            e.stopPropagation();
+            if (ojuData[targetDate]) {
+              delete ojuData[targetDate];
+            } else {
+              ojuData[targetDate] = true;
+            }
+            saveAll();
+          };
+
+          // 3) 나머지 칸(날짜, 요일, 편명/일정, Show up) 터치: 상세 편집 모달 오픈
+          var editCells = tr.querySelectorAll('td:nth-child(1), td:nth-child(2), .cell-edit');
+          for (var c = 0; c < editCells.length; c++) {
+            editCells[c].onclick = function () {
+              openEditModal(targetDate);
+            };
+          }
         })(dateStr);
 
         tbody.appendChild(tr);
@@ -497,95 +688,144 @@
         '<span>OFF <b>' + countOff + '</b></span>';
     }
 
-    // Oju 칸 Vial 토글 기능
-    function toggleVial(dateStr) {
+    // 구분(유형) 인라인 순차 토글
+    function cycleRowType(dateStr) {
       if (!rosterData[dateStr]) {
-        rosterData[dateStr] = { type: 'QuickTurn', schedule: '', showUp: '-', vial: true };
+        rosterData[dateStr] = { type: TYPES_ORDER[0], schedule: '', showUp: '-', isPakage: false };
       } else {
-        rosterData[dateStr].vial = !rosterData[dateStr].vial;
+        var curIdx = TYPES_ORDER.indexOf(rosterData[dateStr].type);
+        var nextIdx = (curIdx + 1) % TYPES_ORDER.length;
+        rosterData[dateStr].type = TYPES_ORDER[nextIdx];
       }
-      saveRosterData();
+      saveAll();
     }
 
-    // 예쁜 수정 모달 열기
+    // 24시간제 & 10분 단위 스크롤 피커 초기화
+    function initWheelPicker() {
+      var hourCol = document.getElementById('wheel-hour');
+      var minCol = document.getElementById('wheel-min');
+
+      var hHtml = '<div class="wheel-spacer"></div>';
+      for (var h = 0; h < 24; h++) {
+        var hh = String(h).padStart(2, '0');
+        hHtml += '<div class="wheel-item" data-val="' + hh + '">' + hh + '</div>';
+      }
+      hHtml += '<div class="wheel-spacer"></div>';
+      hourCol.innerHTML = hHtml;
+
+      var mHtml = '<div class="wheel-spacer"></div>';
+      for (var m = 0; m < 60; m += 10) {
+        var mm = String(m).padStart(2, '0');
+        mHtml += '<div class="wheel-item" data-val="' + mm + '">' + mm + '</div>';
+      }
+      mHtml += '<div class="wheel-spacer"></div>';
+      minCol.innerHTML = mHtml;
+
+      function bindWheel(col, isHour) {
+        col.addEventListener('scroll', function () {
+          var idx = Math.round(col.scrollTop / 38);
+          var items = col.querySelectorAll('.wheel-item');
+          for (var i = 0; i < items.length; i++) {
+            items[i].classList.toggle('selected', i === idx);
+          }
+          if (items[idx]) {
+            isNoShowUp = false;
+            document.getElementById('showup-wheel-wrap').style.opacity = '1';
+            if (isHour) selectedHour = items[idx].getAttribute('data-val');
+            else selectedMin = items[idx].getAttribute('data-val');
+          }
+        });
+
+        col.addEventListener('click', function (e) {
+          if (e.target.classList.contains('wheel-item')) {
+            var items = Array.prototype.slice.call(col.querySelectorAll('.wheel-item'));
+            var idx = items.indexOf(e.target);
+            if (idx !== -1) col.scrollTo({ top: idx * 38, behavior: 'smooth' });
+          }
+        });
+      }
+
+      bindWheel(hourCol, true);
+      bindWheel(minCol, false);
+    }
+
+    function setWheelTime(timeStr) {
+      var hourCol = document.getElementById('wheel-hour');
+      var minCol = document.getElementById('wheel-min');
+      var wrap = document.getElementById('showup-wheel-wrap');
+
+      if (!timeStr || timeStr === '-') {
+        isNoShowUp = true;
+        wrap.style.opacity = '0.45';
+        selectedHour = '06';
+        selectedMin = '00';
+      } else {
+        isNoShowUp = false;
+        wrap.style.opacity = '1';
+        var clean = timeStr.replace(/\s+/g, '');
+        var parts = clean.split(':');
+        selectedHour = String(Number(parts[0] || 6)).padStart(2, '0');
+        var rawMin = Number(parts[1] || 0);
+        var roundedMin = Math.round(rawMin / 10) * 10;
+        if (roundedMin >= 60) roundedMin = 50;
+        selectedMin = String(roundedMin).padStart(2, '0');
+      }
+
+      var hIdx = Number(selectedHour);
+      var mIdx = Number(selectedMin) / 10;
+      hourCol.scrollTop = hIdx * 38;
+      minCol.scrollTop = mIdx * 38;
+
+      var hItems = hourCol.querySelectorAll('.wheel-item');
+      for (var i = 0; i < hItems.length; i++) hItems[i].classList.toggle('selected', i === hIdx);
+      var mItems = minCol.querySelectorAll('.wheel-item');
+      for (var j = 0; j < mItems.length; j++) mItems[j].classList.toggle('selected', j === mIdx);
+    }
+
     function openEditModal(dateStr) {
       editingDateStr = dateStr;
-      var cur = rosterData[dateStr] || { type: 'QuickTurn', schedule: '', showUp: '-', vial: false };
-      
-      document.getElementById('modal-date-title').textContent = dateStr + ' 일정 수정';
-      
-      editingTypeIndex = TYPES_ORDER.indexOf(cur.type);
-      if (editingTypeIndex === -1) editingTypeIndex = 0;
-      
-      var typeBtn = document.getElementById('modal-type-btn');
-      typeBtn.textContent = TYPES_ORDER[editingTypeIndex];
-      typeBtn.className = 'type-toggle-btn badge ' + TYPES_ORDER[editingTypeIndex];
+      var cur = rosterData[dateStr] || { type: 'QuickTurn', schedule: '', showUp: '-', isPakage: false };
 
-      document.getElementById('modal-schedule-input').value = cur.schedule;
-      document.getElementById('modal-showup-input').value = cur.showUp;
+      var parts = dateStr.split('-');
+      document.getElementById('modal-date-title').textContent = Number(parts[1]) + '월 ' + Number(parts[2]) + '일 일정 편집';
+      document.getElementById('modal-pkg-checkbox').checked = !!cur.isPakage;
+      document.getElementById('modal-schedule-input').value = cur.schedule || '';
 
       openModal('edit-dialog');
+      setTimeout(function () { setWheelTime(cur.showUp); }, 30);
     }
 
-    // 모달 내 근무 유형 클릭 시 순차 변경 (토글)
-    document.getElementById('modal-type-btn').onclick = function() {
-      editingTypeIndex = (editingTypeIndex + 1) % TYPES_ORDER.length;
-      var newType = TYPES_ORDER[editingTypeIndex];
-      this.textContent = newType;
-      this.className = 'type-toggle-btn badge ' + newType;
-    };
-
-    // 저장 버튼
-    document.getElementById('modal-btn-save').onclick = function() {
-      if (!editingDateStr) return;
-      var t = TYPES_ORDER[editingTypeIndex];
-      var s = document.getElementById('modal-schedule-input').value.trim();
-      var su = document.getElementById('modal-showup-input').value.trim() || '-';
-      var existingVial = rosterData[editingDateStr] ? rosterData[editingDateStr].vial : false;
-
-      rosterData[editingDateStr] = { type: t, schedule: s, showUp: su, vial: existingVial };
-      saveRosterData();
-      closeModal('edit-dialog');
-    };
-
-    // 일정 삭제 버튼
-    document.getElementById('modal-btn-delete').onclick = function() {
-      if (!editingDateStr) return;
-      delete rosterData[editingDateStr];
-      saveRosterData();
-      closeModal('edit-dialog');
-    };
-
-    // 좌우 스와이프 제스처 구현
+    // 좌우 스와이프 월 이동
     var touchStartX = 0;
+    var touchStartY = 0;
     var container = document.getElementById('swipe-container');
-    container.addEventListener('touchstart', function(e) {
+    container.addEventListener('touchstart', function (e) {
       touchStartX = e.changedTouches[0].screenX;
-    });
-    container.addEventListener('touchend', function(e) {
-      var touchEndX = e.changedTouches[0].screenX;
-      var diff = touchEndX - touchStartX;
-      if (Math.abs(diff) > 60) {
+      touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    container.addEventListener('touchend', function (e) {
+      // 모달이 열려 있거나 휠 스크롤 중일 때는 월 스와이프 방지
+      if (document.querySelector('.modal-backdrop.open')) return;
+      var diffX = e.changedTouches[0].screenX - touchStartX;
+      var diffY = e.changedTouches[0].screenY - touchStartY;
+      if (Math.abs(diffX) > 65 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
         var parts = currentYearMonth.split('-');
         var y = Number(parts[0]), m = Number(parts[1]);
-        if (diff > 0) {
-          // 오른쪽으로 밀면 전월
-          var d = new Date(y, m - 2, 1);
-          currentYearMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-        } else {
-          // 왼쪽으로 밀면 다음달
-          var d = new Date(y, m, 1);
-          currentYearMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-        }
+        var d = diffX > 0 ? new Date(y, m - 2, 1) : new Date(y, m, 1);
+        currentYearMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
         renderTable();
       }
-    });
+    }, { passive: true });
 
-    window.addEventListener('DOMContentLoaded', function() {
-      // 편집 토글 버튼
-      document.getElementById('btn-toggle-edit').onclick = function() {
+    window.addEventListener('DOMContentLoaded', function () {
+      initWheelPicker();
+
+      // 하단 편집 버튼 토글
+      document.getElementById('btn-toggle-edit').onclick = function () {
         var tb = document.getElementById('edit-toolbar');
         tb.classList.toggle('show');
+        this.textContent = tb.classList.contains('show') ? '편집 닫기' : '편집';
       };
 
       var closeButtons = document.querySelectorAll('[data-close]');
@@ -593,76 +833,120 @@
         closeButtons[i].onclick = function () { closeModal(this.getAttribute('data-close')); };
       }
 
-      document.getElementById('btn-prev-month').onclick = function () {
-        var parts = currentYearMonth.split('-');
-        var d = new Date(Number(parts[0]), Number(parts[1]) - 2, 1);
-        currentYearMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-        renderTable();
+      document.getElementById('btn-clear-showup').onclick = function () {
+        isNoShowUp = true;
+        document.getElementById('showup-wheel-wrap').style.opacity = '0.45';
       };
 
-      document.getElementById('btn-next-month').onclick = function () {
-        var parts = currentYearMonth.split('-');
-        var d = new Date(Number(parts[0]), Number(parts[1]), 1);
-        currentYearMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-        renderTable();
+      document.getElementById('modal-btn-save').onclick = function () {
+        if (!editingDateStr) return;
+        var existingType = (rosterData[editingDateStr] && rosterData[editingDateStr].type) ? rosterData[editingDateStr].type : 'QuickTurn';
+        var scheduleVal = document.getElementById('modal-schedule-input').value.trim();
+        var isPkgVal = document.getElementById('modal-pkg-checkbox').checked;
+        var showUpVal = isNoShowUp ? '-' : (selectedHour + ':' + selectedMin);
+
+        rosterData[editingDateStr] = {
+          type: existingType,
+          schedule: scheduleVal,
+          showUp: showUpVal,
+          isPakage: isPkgVal
+        };
+        saveAll();
+        closeModal('edit-dialog');
       };
 
-      document.getElementById('btn-open-ocr').onclick = function () { openModal('ocr-dialog'); };
-      document.getElementById('btn-open-backup').onclick = function () {
-        document.getElementById('backup-textarea').value = JSON.stringify(rosterData, null, 2);
-        openModal('backup-dialog');
+      document.getElementById('modal-btn-delete').onclick = function () {
+        if (!editingDateStr) return;
+        // 스케줄 데이터만 삭제하고 Oju 데이터는 독립적으로 보존
+        delete rosterData[editingDateStr];
+        saveAll();
+        closeModal('edit-dialog');
       };
 
-      document.getElementById('btn-apply-ocr').onclick = function () {
-        var lines = document.getElementById('ocr-result-textarea').value.split('\n');
+      // Manual 일괄 입력 열기
+      document.getElementById('btn-open-manual').onclick = function () {
+        openModal('manual-dialog');
+      };
+
+      // AI 프롬프트 원클릭 복사
+      document.getElementById('btn-copy-prompt').onclick = function () {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(AI_PROMPT_TEXT).then(function () {
+            alert('AI 스케줄 변환 프롬프트가 복사되었습니다! 제미나이 채팅창에 붙여넣어 사용하세요.');
+          });
+        } else {
+          var temp = document.createElement('textarea');
+          temp.value = AI_PROMPT_TEXT;
+          document.body.appendChild(temp);
+          temp.select();
+          document.execCommand('copy');
+          document.body.removeChild(temp);
+          alert('AI 스케줄 변환 프롬프트가 복사되었습니다!');
+        }
+      };
+
+      // Manual 일괄 저장
+      document.getElementById('btn-apply-manual').onclick = function () {
+        var lines = document.getElementById('manual-textarea').value.split('\n');
         var count = 0;
         for (var i = 0; i < lines.length; i++) {
           var line = lines[i].trim();
           if (!line) continue;
-          var parts = line.split('|').map(function(s){return s.trim();});
+          var parts = line.split('|').map(function (s) { return s.trim(); });
           var date = parts[0];
           if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            var rawType = parts[1] || 'QuickTurn';
+            if (rawType === '비행') rawType = 'QuickTurn';
+            var isPkg = (parts[4] && parts[4].toLowerCase() === 'pakage') || rawType === 'Pakage';
+            if (rawType === 'Pakage') rawType = 'QuickTurn';
+
             rosterData[date] = {
-              type: parts[1] || 'QuickTurn',
+              type: TYPES_ORDER.indexOf(rawType) !== -1 ? rawType : '기타',
               schedule: parts[2] || '',
               showUp: parts[3] || '-',
-              vial: false
+              isPakage: isPkg
             };
             count++;
           }
         }
         if (count > 0) {
-          saveRosterData();
-          closeModal('ocr-dialog');
-          alert(count + '개 일정이 반영되었습니다.');
+          saveAll();
+          closeModal('manual-dialog');
+          alert(count + '일치 일정이 저장되었습니다.');
         } else {
-          alert('형식을 확인해 주세요.');
+          alert('저장할 유효한 일정이 없습니다. 형식을 확인해 주세요.');
         }
       };
 
-      document.getElementById('btn-clear-old').onclick = function () {
-        cleanOldData();
-        renderTable();
-        alert('이틀 전 데이터가 정리되었습니다.');
+      // 백업/복원
+      document.getElementById('btn-open-backup').onclick = function () {
+        document.getElementById('backup-textarea').value = JSON.stringify({ roster: rosterData, oju: ojuData }, null, 2);
+        openModal('backup-dialog');
       };
 
       document.getElementById('btn-copy-backup').onclick = function () {
         var ta = document.getElementById('backup-textarea');
         ta.select();
         document.execCommand('copy');
-        alert('복사되었습니다.');
+        alert('백업 데이터가 복사되었습니다.');
       };
 
       document.getElementById('btn-restore-backup').onclick = function () {
         try {
           var parsed = JSON.parse(document.getElementById('backup-textarea').value);
-          if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error();
-          rosterData = parsed;
-          saveRosterData();
+          if (parsed && parsed.roster) {
+            rosterData = parsed.roster;
+            ojuData = parsed.oju || {};
+          } else if (parsed && typeof parsed === 'object') {
+            rosterData = parsed;
+          } else {
+            throw new Error();
+          }
+          saveAll();
           closeModal('backup-dialog');
-          alert('복원되었습니다.');
+          alert('데이터가 복원되었습니다.');
         } catch (e) {
-          alert('형식이 올바르지 않습니다.');
+          alert('올바른 백업 형식이 아닙니다.');
         }
       };
 
