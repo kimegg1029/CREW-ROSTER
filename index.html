@@ -8,12 +8,12 @@
   <meta http-equiv="Expires" content="0" />
   <title>히동 Schedule</title>
 
-  <!-- 스마트폰 홈 화면 및 브라우저 아이콘 설정 (보내주신 사진 적용) -->
+  <!-- 스마트폰 홈 화면 및 브라우저 아이콘 설정 -->
   <link rel="apple-touch-icon" href="icon.jpg">
   <link rel="icon" type="image/jpeg" href="icon.jpg">
 
   <style>
-    /* 라이트 테마 기본 변수 */
+    /* 기본 색상 테마 변수 (사용자 커스텀 색상으로 덮어씌워짐) */
     :root {
       --bg: #f8fafc;
       --surface: #ffffff;
@@ -30,8 +30,6 @@
       --off-badge: #16a34a;
       --edu-bg: #fef3c7;
       --edu-badge: #d97706;
-      --etc-bg: #f1f5f9;
-      --etc-badge: #64748b;
 
       --pkg-border: #8b5cf6;
       --today-bg: #fff1f2;
@@ -55,8 +53,6 @@
       --off-badge: #34d399;
       --edu-bg: #78350f;
       --edu-badge: #fbbf24;
-      --etc-bg: #334155;
-      --etc-badge: #94a3b8;
 
       --pkg-border: #a78bfa;
       --today-bg: #4c0519;
@@ -150,7 +146,6 @@
     tr.type-DH { background-color: var(--dh-bg); }
     tr.type-휴무 { background-color: var(--off-bg); }
     tr.type-교육 { background-color: var(--edu-bg); }
-    tr.type-기타 { background-color: var(--etc-bg); }
 
     tr.is-today {
       background-color: var(--today-bg) !important;
@@ -185,7 +180,6 @@
     .badge.DH { background: var(--dh-badge); }
     .badge.휴무 { background: var(--off-badge); }
     .badge.교육 { background: var(--edu-badge); color: #1e293b; }
-    .badge.기타 { background: var(--etc-badge); color: var(--text); }
     .badge.empty { background: var(--border); color: var(--text-sub); }
 
     .pkg-tag {
@@ -209,8 +203,9 @@
       font-size: 11px;
       color: var(--text-sub);
     }
-    .legend span { display: flex; align-items: center; gap: 4px; }
-    .legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+    .legend span { display: flex; align-items: center; gap: 4px; cursor: pointer; padding: 4px 6px; border-radius: 6px; border: 1px solid transparent; transition: background 0.2s; }
+    .legend span:hover { background: var(--border); }
+    .legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 
     .bottom-controls {
       margin-top: 16px;
@@ -370,6 +365,23 @@
       pointer-events: none;
     }
 
+    /* 컬러 팔레트 그리드 */
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+      margin-bottom: 14px;
+    }
+    .color-chip {
+      height: 42px;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .color-chip:active { transform: scale(0.92); }
+
     .dialog-footer { display: flex; gap: 8px; margin-top: 8px; }
   </style>
 </head>
@@ -400,12 +412,12 @@
       </table>
     </section>
 
-    <div class="legend" aria-label="근무 배경색 안내">
-      <span><i style="background:var(--flight-badge)"></i>비행</span>
-      <span><i style="background:var(--dh-badge)"></i>DH</span>
-      <span><i style="background:var(--off-badge)"></i>휴무</span>
-      <span><i style="background:var(--edu-badge)"></i>교육</span>
-      <span><i style="background:var(--pkg-border)"></i>Pakage</span>
+    <div class="legend" aria-label="근무 배경색 안내 (터치 시 색상 변경)">
+      <span id="legend-비행"><i style="background:var(--flight-badge)"></i>비행</span>
+      <span id="legend-DH"><i style="background:var(--dh-badge)"></i>DH</span>
+      <span id="legend-휴무"><i style="background:var(--off-badge)"></i>휴무</span>
+      <span id="legend-교육"><i style="background:var(--edu-badge)"></i>교육</span>
+      <span id="legend-Pakage"><i style="background:var(--pkg-border)"></i>Pakage</span>
     </div>
 
     <!-- 하단 편집 영역 -->
@@ -456,6 +468,19 @@
     </div>
   </div>
 
+  <!-- 색상 커스텀 모달 -->
+  <div class="modal-backdrop" id="color-dialog">
+    <div class="modal-box">
+      <div class="dialog-header">
+        <h2 id="color-modal-title">색상 선택</h2>
+        <button type="button" class="btn-secondary" data-close="color-dialog">✕</button>
+      </div>
+      <p class="dialog-desc">원하시는 색상을 선택하시면 해당 카테고리의 배경색과 배지 색상이 즉시 변경됩니다.</p>
+      <div class="color-grid" id="color-palette-grid"></div>
+      <button type="button" class="btn-secondary btn-full" data-close="color-dialog">닫기</button>
+    </div>
+  </div>
+
   <!-- Manual 모달 -->
   <div class="modal-backdrop" id="manual-dialog">
     <div class="modal-box">
@@ -500,17 +525,38 @@
     var STORAGE_ROSTER = 'eastar_crew_roster_v4';
     var STORAGE_OJU = 'eastar_crew_oju_v4';
     var STORAGE_THEME = 'eastar_crew_theme';
+    var STORAGE_COLORS = 'eastar_crew_colors_v1';
     var DAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
-    var TYPES_ORDER = ['비행', 'DH', '휴무', '교육', '기타'];
+    var TYPES_ORDER = ['비행', 'DH', '휴무', '교육'];
 
+    // [하드코딩] 전문가용 승무원 근무표 파싱 마스터 프롬프트
     var AI_PROMPT_TEXT =
-      '너는 이스타항공(ZE) 승무원 월간 근무표 파서야.\n' +
-      '제공된 사진이나 텍스트의 모든 날짜별 스케줄을 아래 규칙에 맞춰 YYYY-MM-DD | 구분 | 일정 | Show-up 형식의 텍스트로만 변환해 줘. 다른 설명은 하지 마.\n\n' +
-      '[규칙]\n' +
-      '1. date: "YYYY-MM-DD" 형식 (연월 정보가 없으면 현재 월 기준)\n' +
-      '2. type: 반드시 "비행", "DH", "휴무", "교육", "기타" 중 하나로 매칭 (PV가 포함된 일정은 휴무로 지정)\n' +
-      '3. schedule: 편명 및 노선 또는 일정명 (예: "ZE535", 연속되는 동일 편명 체류인 경우 체류 일정 반영)\n' +
-      '4. showUp: 출근 시각 "HH:MM" (24시간제, 출근 시각이 없으면 "-")';
+      '너는 이스타항공(ZE) 전문 객실승무원 월간 근무표 파서(Parser)이자 데이터 변환 엔지니어다.\n' +
+      '사용자가 제공하는 월간 근무표(이미지, 스크린샷 텍스트, 또는 복사된 텍스트)를 분석하여 아래의 엄격한 규칙과 포맷에 맞춰 날짜별 데이터로 완벽하게 변환해야 한다.\n\n' +
+      '[1. 핵심 출력 포맷 수식]\n' +
+      '반드시 아래의 파이프(|) 구분 형태의 텍스트로만 출력할 것. 다른 인사말이나 부가 설명, 코드 블록 외의 잡소리는 절대 출력하지 마라.\n' +
+      'YYYY-MM-DD | 구분 | 일정/편명 | Show-up\n\n' +
+      '[2. 필드별 상세 파싱 규칙]\n' +
+      '1) date (날짜):\n' +
+      '   - "YYYY-MM-DD" 형식을 엄수할 것.\n' +
+      '   - 연도나 월이 생략되어 있다면 현재 제공되는 스케줄의 기준 연/월을 자동으로 계산하여 채울 것.\n' +
+      '   - 오늘(현재 날짜) 기준으로 2일 전보다 과거인 날짜는 출력 대상에서 제외(누락)해도 좋다.\n\n' +
+      '2) type (구분):\n' +
+      '   - 반드시 아래 카테고리 명칭 중 정확히 하나만 매칭할 것 (임의로 단어를 바꾸지 말 것).\n' +
+      '     - [비행]: ZE 편명 또는 일반 비행 근무 (기본값)\n' +
+      '     - [DH]: Deadhead (탑승객 신분 이동 근무)\n' +
+      '     - [휴무]: OFF, 휴무일, 또는 \'PV\'가 포함된 일정\n' +
+      '     - [교육]: 지상훈련, 시뮬레이터, 비상탈출 훈련, 각종 사내 교육\n\n' +
+      '3) schedule (일정 및 편명):\n' +
+      '   - 편명인 경우 항공사 코드와 편명, 노선을 함께 표기할 것 (예: "ZE535 ICN-CJU" 또는 "ZE535").\n' +
+      '   - 만약 전날과 동일한 편명이 연속으로 이어지는 일정이라면 체류(Layover) 성격을 고려하여 표기할 것 (예: "ZE535 (체류)").\n' +
+      '   - 휴무나 대기인 경우 "OFF" 또는 해당 일정명을 그대로 기입할 것.\n\n' +
+      '4) showUp (출근 시각):\n' +
+      '   - 24시간제 "HH:MM" 형식으로 표기할 것 (예: "06:30").\n' +
+      '   - 출근 시각이 존재하지 않거나 오프/휴무인 경우 반드시 하이픈("-")으로 표기할 것.\n\n' +
+      '[3. 예외 및 특수 규칙]\n' +
+      '- 근무표 내에 "PV" (Vacation 또는 관련 오프 성격의 코드)가 포함된 날짜는 무조건 구분(type)을 "휴무"로 지정할 것.\n' +
+      '- 연속된 동일 편명(예: 15일 ZE535, 16일 ZE535)이 등장할 경우 16일 일정은 체류 맥락을 반영해 줄 것.';
 
     var now = new Date();
     var currentYearMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
@@ -521,6 +567,66 @@
     var selectedMin = '00';
     var isNoShowUp = false;
     var isPakageMode = false;
+    var editingColorType = null;
+
+    // 10가지 컬러 팔레트 목록 (HEX)
+    var COLOR_PALETTE = [
+      '#2563eb', '#3b82f6', '#06b6d4', '#10b981', '#16a34a',
+      '#d97706', '#f97316', '#ef4444', '#c026d3', '#8b5cf6'
+    ];
+
+    // 기본 색상 매핑
+    var defaultColors = {
+      '비행': '#2563eb',
+      'DH': '#c026d3',
+      '휴무': '#16a34a',
+      '교육': '#d97706',
+      'Pakage': '#8b5cf6'
+    };
+
+    var customColors = {};
+    try {
+      var savedColors = JSON.parse(localStorage.getItem(STORAGE_COLORS) || '{}');
+      if (savedColors && typeof savedColors === 'object') customColors = savedColors;
+    } catch(e) { customColors = {}; }
+
+    function getColor(type) {
+      return customColors[type] || defaultColors[type] || '#2563eb';
+    }
+
+    // HEX 색상을 연한 배경색으로 변환하는 헬퍼
+    function hexToRgba(hex, alpha) {
+      var c = hex.replace('#','');
+      if(c.length === 3) c = c.split('').map(function(x){return x+x;}).join('');
+      var num = parseInt(c, 16);
+      return 'rgba(' + (num >> 16) + ',' + ((num >> 8) & 255) + ',' + (num & 255) + ',' + alpha + ')';
+    }
+
+    // 동적 스타일 적용
+    function applyCustomStyles() {
+      var styleEl = document.getElementById('dynamic-custom-styles');
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'dynamic-custom-styles';
+        document.head.appendChild(styleEl);
+      }
+      var css = '';
+      var types = ['비행', 'DH', '휴무', '교육'];
+      for (var i = 0; i < types.length; i++) {
+        var t = types[i];
+        var col = getColor(t);
+        css += 'tr.type-' + t + ' { background-color: ' + hexToRgba(col, 0.18) + ' !important; }\n';
+        css += '.badge.' + t + ' { background: ' + col + ' !important; }\n';
+        var legendIcon = document.querySelector('#legend-' + t + ' i');
+        if (legendIcon) legendIcon.style.background = col;
+      }
+      var pkgCol = getColor('Pakage');
+      css += ':root { --pkg-border: ' + pkgCol + ' !important; }\n';
+      var pkgIcon = document.querySelector('#legend-Pakage i');
+      if (pkgIcon) pkgIcon.style.background = pkgCol;
+
+      styleEl.innerHTML = css;
+    }
 
     var savedTheme = localStorage.getItem(STORAGE_THEME) || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -535,18 +641,24 @@
       var savedR = JSON.parse(localStorage.getItem(STORAGE_ROSTER) || '{}');
       if (savedR && typeof savedR === 'object' && !Array.isArray(savedR)) rosterData = savedR;
       
-      var savedO = localStorage.getItem(STORAGE_OJU);
-      if (savedO) {
-        ojuData = JSON.parse(savedO);
-      } else {
-        for (var i = 0; i < DEFAULT_OJU_DATES.length; i++) {
+      var savedO = JSON.parse(localStorage.getItem(STORAGE_OJU) || '{}');
+      if (savedO && typeof savedO === 'object' && !Array.isArray(savedO)) {
+        ojuData = savedO;
+      }
+      
+      for (var i = 0; i < DEFAULT_OJU_DATES.length; i++) {
+        if (!ojuData[DEFAULT_OJU_DATES[i]]) {
           ojuData[DEFAULT_OJU_DATES[i]] = true;
         }
-        localStorage.setItem(STORAGE_OJU, JSON.stringify(ojuData));
       }
+      localStorage.setItem(STORAGE_OJU, JSON.stringify(ojuData));
+
     } catch (e) {
       rosterData = {};
       ojuData = {};
+      for (var k = 0; k < DEFAULT_OJU_DATES.length; k++) {
+        ojuData[DEFAULT_OJU_DATES[k]] = true;
+      }
     }
 
     function getCutoffTimestamp() {
@@ -622,6 +734,7 @@
 
     function renderTable() {
       processLayoverSchedules();
+      applyCustomStyles();
 
       var parts = currentYearMonth.split('-');
       var year = Number(parts[0]);
@@ -825,6 +938,31 @@
       setTimeout(function () { setWheelTime(cur.showUp); }, 30);
     }
 
+    // 컬러 팔레트 모달 생성
+    function openColorModal(type) {
+      editingColorType = type;
+      document.getElementById('color-modal-title').textContent = '[' + type + '] 색상 선택';
+      var grid = document.getElementById('color-palette-grid');
+      grid.innerHTML = '';
+
+      for (var i = 0; i < COLOR_PALETTE.length; i++) {
+        var hex = COLOR_PALETTE[i];
+        var chip = document.createElement('div');
+        chip.className = 'color-chip';
+        chip.style.background = hex;
+        (function(cHex) {
+          chip.onclick = function() {
+            customColors[editingColorType] = cHex;
+            localStorage.setItem(STORAGE_COLORS, JSON.stringify(customColors));
+            closeModal('color-dialog');
+            renderTable();
+          };
+        })(hex);
+        grid.appendChild(chip);
+      }
+      openModal('color-dialog');
+    }
+
     var touchStartX = 0;
     var touchStartY = 0;
     var container = document.getElementById('swipe-container');
@@ -848,6 +986,17 @@
 
     window.addEventListener('DOMContentLoaded', function () {
       initWheelPicker();
+
+      // 하단 범례 클릭 시 색상 팔레트 모달 오픈 연결
+      var legendItems = ['비행', 'DH', '휴무', '교육', 'Pakage'];
+      for (var l = 0; l < legendItems.length; l++) {
+        (function(tName) {
+          var el = document.getElementById('legend-'.concat(tName));
+          if (el) {
+            el.onclick = function() { openColorModal(tName); };
+          }
+        })(legendItems[l]);
+      }
 
       document.getElementById('btn-theme-toggle').onclick = function () {
         var current = document.documentElement.getAttribute('data-theme');
@@ -916,7 +1065,7 @@
       document.getElementById('btn-copy-prompt').onclick = function () {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(AI_PROMPT_TEXT).then(function () {
-            alert('AI 프롬프트가 복사되었습니다!');
+            alert('전문가용 AI 마스터 프롬프트가 복사되었습니다!');
           });
         }
       };
@@ -957,7 +1106,7 @@
       };
 
       document.getElementById('btn-open-backup').onclick = function () {
-        document.getElementById('backup-textarea').value = JSON.stringify({ roster: rosterData, oju: ojuData }, null, 2);
+        document.getElementById('backup-textarea').value = JSON.stringify({ roster: rosterData, oju: ojuData, colors: customColors }, null, 2);
         openModal('backup-dialog');
       };
 
@@ -974,6 +1123,10 @@
           if (parsed && parsed.roster) {
             rosterData = parsed.roster;
             ojuData = parsed.oju || {};
+            if (parsed.colors) {
+              customColors = parsed.colors;
+              localStorage.setItem(STORAGE_COLORS, JSON.stringify(customColors));
+            }
           } else if (parsed && typeof parsed === 'object') {
             rosterData = parsed;
           } else {
