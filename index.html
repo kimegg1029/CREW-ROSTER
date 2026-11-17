@@ -122,29 +122,32 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 12px;
+      font-size: 11.5px;
       table-layout: fixed;
     }
     thead {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
       color: var(--text-sub);
-      font-size: 11px;
+      font-size: 10.5px;
     }
     th, td {
-      padding: 10px 4px;
+      padding: 10px 2px;
       text-align: center;
       vertical-align: middle;
       border-bottom: 1px solid var(--border);
       word-break: keep-all;
+      white-space: nowrap;
+      overflow: hidden;
     }
 
-    th:nth-child(1), td:nth-child(1) { width: 44px; font-weight: 700; }
-    th:nth-child(2), td:nth-child(2) { width: 36px; }
-    th:nth-child(3), td:nth-child(3) { width: 70px; cursor: pointer; }
-    th:nth-child(4), td:nth-child(4) { width: auto; }
-    th:nth-child(5), td:nth-child(5) { width: 64px; white-space: nowrap; font-weight: 600; font-variant-numeric: tabular-nums; }
-    th:nth-child(6), td:nth-child(6) { width: 48px; white-space: nowrap; cursor: pointer; }
+    /* 날짜, 요일, 구분 칸을 2줄 방지를 위해 폭을 꽉 조이되 고정 */
+    th:nth-child(1), td:nth-child(1) { width: 34px; font-weight: 700; padding: 10px 0px; }
+    th:nth-child(2), td:nth-child(2) { width: 28px; padding: 10px 0px; }
+    th:nth-child(3), td:nth-child(3) { width: 54px; padding: 10px 1px; cursor: pointer; }
+    th:nth-child(4), td:nth-child(4) { width: auto; white-space: normal; } /* 편명 칸은 여러 글자 허용 */
+    th:nth-child(5), td:nth-child(5) { width: 58px; padding: 10px 1px; white-space: nowrap; font-weight: 600; font-variant-numeric: tabular-nums; }
+    th:nth-child(6), td:nth-child(6) { width: 36px; padding: 10px 0px; white-space: nowrap; cursor: pointer; }
 
     tr.type-비행 { background-color: var(--flight-bg); }
     tr.type-DH { background-color: var(--dh-bg); }
@@ -176,13 +179,15 @@
 
     .badge {
       display: inline-block;
-      font-size: 10px;
+      font-size: 9.5px;
       font-weight: 700;
-      padding: 3px 6px;
-      border-radius: 5px;
+      padding: 3px 4px;
+      border-radius: 4px;
       color: #fff;
       line-height: 1.1;
       user-select: none;
+      width: 100%;
+      text-align: center;
     }
     .badge.비행 { background: var(--flight-badge); }
     .badge.DH { background: var(--dh-badge); }
@@ -193,13 +198,13 @@
 
     .pkg-tag {
       display: inline-block;
-      font-size: 9px;
+      font-size: 8.5px;
       font-weight: 800;
       color: var(--pkg-border);
       border: 1px solid var(--pkg-border);
-      border-radius: 4px;
-      padding: 0 3px;
-      margin-right: 3px;
+      border-radius: 3px;
+      padding: 0 2px;
+      margin-right: 2px;
       vertical-align: middle;
     }
 
@@ -520,7 +525,7 @@
       <textarea id="backup-textarea"></textarea>
       <div class="dialog-footer">
         <button type="button" class="btn-secondary btn-full" id="btn-copy-backup">복사</button>
-        <button type="button" class="btn-primary btn-full" id="btn-restore-backup">복원</button>
+        <button type="button" class="btn-primary btn-full" id="btn-paste-restore">붙여넣기</button>
       </div>
     </div>
   </div>
@@ -539,7 +544,6 @@
     var DAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
     var TYPES_ORDER = ['비행', 'DH', '휴무', '교육', '기타'];
 
-    // [하드코딩] 전문가용 승무원 근무표 파싱 마스터 프롬프트
     var AI_PROMPT_TEXT =
       '너는 이스타항공(ZE) 전문 객실승무원 월간 근무표 파서(Parser)이자 데이터 변환 엔지니어다.\n' +
       '사용자가 제공하는 월간 근무표(이미지, 스크린샷 텍스트, 또는 복사된 텍스트)를 분석하여 아래의 엄격한 규칙과 포맷에 맞춰 날짜별 데이터로 완벽하게 변환해야 한다.\n\n' +
@@ -580,13 +584,11 @@
     var isPakageMode = false;
     var editingColorType = null;
 
-    // 10가지 컬러 팔레트 목록 (HEX)
     var COLOR_PALETTE = [
       '#2563eb', '#3b82f6', '#06b6d4', '#10b981', '#16a34a',
       '#d97706', '#f97316', '#ef4444', '#c026d3', '#8b5cf6'
     ];
 
-    // 기본 색상 매핑
     var defaultColors = {
       '비행': '#2563eb',
       'DH': '#c026d3',
@@ -606,7 +608,6 @@
       return customColors[type] || defaultColors[type] || '#2563eb';
     }
 
-    // HEX 색상을 연한 배경색으로 변환하는 헬퍼
     function hexToRgba(hex, alpha) {
       var c = hex.replace('#','');
       if(c.length === 3) c = c.split('').map(function(x){return x+x;}).join('');
@@ -614,7 +615,6 @@
       return 'rgba(' + (num >> 16) + ',' + ((num >> 8) & 255) + ',' + (num & 255) + ',' + alpha + ')';
     }
 
-    // 동적 스타일 적용 (근무 유형별 배경/배지 및 패키지 테두리/배경 연동)
     function applyCustomStyles() {
       var styleEl = document.getElementById('dynamic-custom-styles');
       if (!styleEl) {
@@ -633,7 +633,6 @@
         if (legendIcon) legendIcon.style.background = col;
       }
       
-      // Pakage 색상 연동 (테두리 및 배경색 동시 적용)
       var pkgCol = getColor('Pakage');
       css += ':root { --pkg-border: ' + pkgCol + ' !important; }\n';
       css += 'tr.pkg-row { background-color: ' + hexToRgba(pkgCol, 0.16) + ' !important; }\n';
@@ -773,390 +772,4 @@
         if (rowDateObj.getTime() < cutoffTime) continue;
 
         var dayIdx = rowDateObj.getDay();
-        var dayName = DAYS_KO[dayIdx];
-        var entry = rosterData[dateStr];
-        var hasOju = !!ojuData[dateStr];
-
-        var tr = document.createElement('tr');
-        var isToday = (dateStr === todayStr);
-        var rowClasses = [];
-
-        if (entry && entry.type) rowClasses.push('type-' + entry.type);
-        if (isToday) rowClasses.push('is-today');
-
-        var isPkg = !!(entry && entry.isPakage);
-        if (isPkg) {
-          rowClasses.push('pkg-row');
-          var prevPkg = !!(rosterData[getDateOffsetStr(dateStr, -1)] && rosterData[getDateOffsetStr(dateStr, -1)].isPakage);
-          var nextPkg = !!(rosterData[getDateOffsetStr(dateStr, 1)] && rosterData[getDateOffsetStr(dateStr, 1)].isPakage);
-          if (!prevPkg) rowClasses.push('pkg-start');
-          if (!nextPkg) rowClasses.push('pkg-end');
-        }
-
-        if (rowClasses.length > 0) tr.className = rowClasses.join(' ');
-
-        var dayClass = dayIdx === 0 ? 'sun' : (dayIdx === 6 ? 'sat' : '');
-
-        var badgeHtml = (entry && entry.type)
-          ? '<span class="badge ' + entry.type + '">' + entry.type + '</span>'
-          : '<span class="badge empty">-</span>';
-
-        var scheduleText = entry && entry.schedule ? escapeHtml(entry.schedule) : '<span style="color:var(--text-sub)">-</span>';
-        var pkgTagHtml = isPkg ? '<span class="pkg-tag">PKG</span>' : '';
-        var showUpHtml = (entry && entry.showUp && entry.showUp !== '-')
-          ? escapeHtml(entry.showUp.replace(':', ' : '))
-          : '<span style="color:var(--text-sub)">-</span>';
-
-        var ojuMark = hasOju ? '🧪' : '<span style="color:var(--border);">·</span>';
-
-        tr.innerHTML =
-          '<td class="' + dayClass + '">' + dd + (isToday ? '<div style="font-size:8px; color:var(--today-accent); line-height:1;">TODAY</div>' : '') + '</td>' +
-          '<td class="' + dayClass + '">' + dayName + '</td>' +
-          '<td class="cell-type">' + badgeHtml + '</td>' +
-          '<td class="cell-edit">' + pkgTagHtml + scheduleText + '</td>' +
-          '<td class="cell-edit">' + showUpHtml + '</td>' +
-          '<td class="cell-oju">' + ojuMark + '</td>';
-
-        (function (targetDate) {
-          tr.querySelector('.cell-type').onclick = function (e) {
-            e.stopPropagation();
-            if (isPakageMode) return;
-            cycleRowType(targetDate);
-          };
-
-          tr.querySelector('.cell-oju').onclick = function (e) {
-            e.stopPropagation();
-            if (isPakageMode) return;
-            if (ojuData[targetDate]) delete ojuData[targetDate];
-            else ojuData[targetDate] = true;
-            saveAll();
-          };
-
-          tr.onclick = function () {
-            if (isPakageMode) {
-              if (!rosterData[targetDate]) {
-                rosterData[targetDate] = { type: '비행', schedule: '', showUp: '-', isPakage: true };
-              } else {
-                rosterData[targetDate].isPakage = !rosterData[targetDate].isPakage;
-              }
-              saveAll();
-            } else {
-              openEditModal(targetDate);
-            }
-          };
-        })(dateStr);
-
-        tbody.appendChild(tr);
-      }
-    }
-
-    function cycleRowType(dateStr) {
-      if (!rosterData[dateStr]) {
-        rosterData[dateStr] = { type: TYPES_ORDER[0], schedule: '', showUp: '-', isPakage: false };
-      } else {
-        var curIdx = TYPES_ORDER.indexOf(rosterData[dateStr].type);
-        var nextIdx = (curIdx + 1) % TYPES_ORDER.length;
-        rosterData[dateStr].type = TYPES_ORDER[nextIdx];
-      }
-      saveAll();
-    }
-
-    function initWheelPicker() {
-      var hourCol = document.getElementById('wheel-hour');
-      var minCol = document.getElementById('wheel-min');
-
-      var hHtml = '<div class="wheel-spacer"></div>';
-      for (var h = 0; h < 24; h++) {
-        var hh = String(h).padStart(2, '0');
-        hHtml += '<div class="wheel-item" data-val="' + hh + '">' + hh + '</div>';
-      }
-      hHtml += '<div class="wheel-spacer"></div>';
-      hourCol.innerHTML = hHtml;
-
-      var mHtml = '<div class="wheel-spacer"></div>';
-      for (var m = 0; m < 60; m += 10) {
-        var mm = String(m).padStart(2, '0');
-        mHtml += '<div class="wheel-item" data-val="' + mm + '">' + mm + '</div>';
-      }
-      mHtml += '<div class="wheel-spacer"></div>';
-      minCol.innerHTML = mHtml;
-
-      function bindWheel(col, isHour) {
-        col.addEventListener('scroll', function () {
-          var idx = Math.round(col.scrollTop / 38);
-          var items = col.querySelectorAll('.wheel-item');
-          for (var i = 0; i < items.length; i++) items[i].classList.toggle('selected', i === idx);
-          if (items[idx]) {
-            isNoShowUp = false;
-            document.getElementById('showup-wheel-wrap').style.opacity = '1';
-            if (isHour) selectedHour = items[idx].getAttribute('data-val');
-            else selectedMin = items[idx].getAttribute('data-val');
-          }
-        });
-
-        col.addEventListener('click', function (e) {
-          if (e.target.classList.contains('wheel-item')) {
-            var items = Array.prototype.slice.call(col.querySelectorAll('.wheel-item'));
-            var idx = items.indexOf(e.target);
-            if (idx !== -1) col.scrollTo({ top: idx * 38, behavior: 'smooth' });
-          }
-        });
-      }
-
-      bindWheel(hourCol, true);
-      bindWheel(minCol, false);
-    }
-
-    function setWheelTime(timeStr) {
-      var hourCol = document.getElementById('wheel-hour');
-      var minCol = document.getElementById('wheel-min');
-      var wrap = document.getElementById('showup-wheel-wrap');
-
-      if (!timeStr || timeStr === '-') {
-        isNoShowUp = true;
-        wrap.style.opacity = '0.4';
-        selectedHour = '06';
-        selectedMin = '00';
-      } else {
-        isNoShowUp = false;
-        wrap.style.opacity = '1';
-        var clean = timeStr.replace(/\s+/g, '');
-        var parts = clean.split(':');
-        selectedHour = String(Number(parts[0] || 6)).padStart(2, '0');
-        var rawMin = Number(parts[1] || 0);
-        var roundedMin = Math.round(rawMin / 10) * 10;
-        if (roundedMin >= 60) roundedMin = 50;
-        selectedMin = String(roundedMin).padStart(2, '0');
-      }
-
-      var hIdx = Number(selectedHour);
-      var mIdx = Number(selectedMin) / 10;
-      hourCol.scrollTop = hIdx * 38;
-      minCol.scrollTop = mIdx * 38;
-
-      var hItems = hourCol.querySelectorAll('.wheel-item');
-      for (var i = 0; i < hItems.length; i++) hItems[i].classList.toggle('selected', i === hIdx);
-      var mItems = minCol.querySelectorAll('.wheel-item');
-      for (var j = 0; j < mItems.length; j++) mItems[j].classList.toggle('selected', j === mIdx);
-    }
-
-    function openEditModal(dateStr) {
-      editingDateStr = dateStr;
-      var cur = rosterData[dateStr] || { type: '비행', schedule: '', showUp: '-', isPakage: false };
-
-      var parts = dateStr.split('-');
-      document.getElementById('modal-date-title').textContent = Number(parts[1]) + '월 ' + Number(parts[2]) + '일 일정 편집';
-      document.getElementById('modal-pkg-checkbox').checked = !!cur.isPakage;
-      document.getElementById('modal-schedule-input').value = cur.schedule || '';
-
-      openModal('edit-dialog');
-      setTimeout(function () { setWheelTime(cur.showUp); }, 30);
-    }
-
-    // 컬러 팔레트 모달 생성
-    function openColorModal(type) {
-      editingColorType = type;
-      document.getElementById('color-modal-title').textContent = '[' + type + '] 색상 선택';
-      var grid = document.getElementById('color-palette-grid');
-      grid.innerHTML = '';
-
-      for (var i = 0; i < COLOR_PALETTE.length; i++) {
-        var hex = COLOR_PALETTE[i];
-        var chip = document.createElement('div');
-        chip.className = 'color-chip';
-        chip.style.background = hex;
-        (function(cHex) {
-          chip.onclick = function() {
-            customColors[editingColorType] = cHex;
-            localStorage.setItem(STORAGE_COLORS, JSON.stringify(customColors));
-            closeModal('color-dialog');
-            renderTable();
-          };
-        })(hex);
-        grid.appendChild(chip);
-      }
-      openModal('color-dialog');
-    }
-
-    var touchStartX = 0;
-    var touchStartY = 0;
-    var container = document.getElementById('swipe-container');
-    container.addEventListener('touchstart', function (e) {
-      touchStartX = e.changedTouches[0].screenX;
-      touchStartY = e.changedTouches[0].screenY;
-    }, { passive: true });
-
-    container.addEventListener('touchend', function (e) {
-      if (document.querySelector('.modal-backdrop.open')) return;
-      var diffX = e.changedTouches[0].screenX - touchStartX;
-      var diffY = e.changedTouches[0].screenY - touchStartY;
-      if (Math.abs(diffX) > 65 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
-        var parts = currentYearMonth.split('-');
-        var y = Number(parts[0]), m = Number(parts[1]);
-        var d = diffX > 0 ? new Date(y, m - 2, 1) : new Date(y, m, 1);
-        currentYearMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-        renderTable();
-      }
-    }, { passive: true });
-
-    window.addEventListener('DOMContentLoaded', function () {
-      initWheelPicker();
-
-      // 하단 범례 클릭 시 색상 팔레트 모달 오픈 연결
-      var legendItems = ['비행', 'DH', '휴무', '교육', '기타', 'Pakage'];
-      for (var l = 0; l < legendItems.length; l++) {
-        (function(tName) {
-          var el = document.getElementById('legend-'.concat(tName));
-          if (el) {
-            el.onclick = function() { openColorModal(tName); };
-          }
-        })(legendItems[l]);
-      }
-
-      document.getElementById('btn-theme-toggle').onclick = function () {
-        var current = document.documentElement.getAttribute('data-theme');
-        var next = current === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', next);
-        localStorage.setItem(STORAGE_THEME, next);
-      };
-
-      document.getElementById('btn-toggle-edit').onclick = function () {
-        var tb = document.getElementById('edit-toolbar');
-        tb.classList.toggle('show');
-        this.textContent = tb.classList.contains('show') ? '편집 닫기' : '편집';
-        if (!tb.classList.contains('show') && isPakageMode) {
-          isPakageMode = false;
-          document.body.classList.remove('pkg-mode-active');
-          document.getElementById('btn-toggle-pkg-mode').classList.remove('active-mode');
-          document.getElementById('btn-toggle-pkg-mode').textContent = '📦 Pakage 모드';
-        }
-      };
-
-      document.getElementById('btn-toggle-pkg-mode').onclick = function () {
-        isPakageMode = !isPakageMode;
-        document.body.classList.toggle('pkg-mode-active', isPakageMode);
-        this.classList.toggle('active-mode', isPakageMode);
-        this.textContent = isPakageMode ? '📦 Pakage 모드 ON' : '📦 Pakage 모드';
-      };
-
-      var closeButtons = document.querySelectorAll('[data-close]');
-      for (var i = 0; i < closeButtons.length; i++) {
-        closeButtons[i].onclick = function () { closeModal(this.getAttribute('data-close')); };
-      }
-
-      document.getElementById('btn-clear-showup').onclick = function () {
-        isNoShowUp = true;
-        document.getElementById('showup-wheel-wrap').style.opacity = '0.4';
-      };
-
-      document.getElementById('modal-btn-save').onclick = function () {
-        if (!editingDateStr) return;
-        var existingType = (rosterData[editingDateStr] && rosterData[editingDateStr].type) ? rosterData[editingDateStr].type : '비행';
-        var scheduleVal = document.getElementById('modal-schedule-input').value.trim();
-        var isPkgVal = document.getElementById('modal-pkg-checkbox').checked;
-        var showUpVal = isNoShowUp ? '-' : (selectedHour + ':' + selectedMin);
-
-        rosterData[editingDateStr] = {
-          type: scheduleVal.toUpperCase().includes('PV') ? '휴무' : existingType,
-          schedule: scheduleVal,
-          showUp: showUpVal,
-          isPakage: isPkgVal
-        };
-        saveAll();
-        closeModal('edit-dialog');
-      };
-
-      document.getElementById('modal-btn-delete').onclick = function () {
-        if (!editingDateStr) return;
-        delete rosterData[editingDateStr];
-        saveAll();
-        closeModal('edit-dialog');
-      };
-
-      document.getElementById('btn-open-manual').onclick = function () {
-        openModal('manual-dialog');
-      };
-
-      document.getElementById('btn-copy-prompt').onclick = function () {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(AI_PROMPT_TEXT).then(function () {
-            alert('전문가용 AI 마스터 프롬프트가 복사되었습니다!');
-          });
-        }
-      };
-
-      document.getElementById('btn-apply-manual').onclick = function () {
-        var lines = document.getElementById('manual-textarea').value.split('\n');
-        var count = 0;
-        for (var i = 0; i < lines.length; i++) {
-          var line = lines[i].trim();
-          if (!line) continue;
-          var parts = line.split('|').map(function (s) { return s.trim(); });
-          var date = parts[0];
-          if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-            var rawType = parts[1] || '비행';
-            var sched = parts[2] || '';
-            var showUp = parts[3] || '-';
-
-            if (rawType.toUpperCase().includes('PV') || sched.toUpperCase().includes('PV')) {
-              rawType = '휴무';
-            }
-
-            rosterData[date] = {
-              type: TYPES_ORDER.indexOf(rawType) !== -1 ? rawType : '비행',
-              schedule: sched,
-              showUp: showUp,
-              isPakage: false
-            };
-            count++;
-          }
-        }
-        if (count > 0) {
-          saveAll();
-          closeModal('manual-dialog');
-          alert(count + '일치 일정이 저장되었습니다.');
-        } else {
-          alert('저장할 유효한 일정이 없습니다.');
-        }
-      };
-
-      document.getElementById('btn-open-backup').onclick = function () {
-        document.getElementById('backup-textarea').value = JSON.stringify({ roster: rosterData, oju: ojuData, colors: customColors }, null, 2);
-        openModal('backup-dialog');
-      };
-
-      document.getElementById('btn-copy-backup').onclick = function () {
-        var ta = document.getElementById('backup-textarea');
-        ta.select();
-        document.execCommand('copy');
-        alert('백업 데이터가 복사되었습니다.');
-      };
-
-      document.getElementById('btn-restore-backup').onclick = function () {
-        try {
-          var parsed = JSON.parse(document.getElementById('backup-textarea').value);
-          if (parsed && parsed.roster) {
-            rosterData = parsed.roster;
-            ojuData = parsed.oju || {};
-            if (parsed.colors) {
-              customColors = parsed.colors;
-              localStorage.setItem(STORAGE_COLORS, JSON.stringify(customColors));
-            }
-          } else if (parsed && typeof parsed === 'object') {
-            rosterData = parsed;
-          } else {
-            throw new Error();
-          }
-          saveAll();
-          closeModal('backup-dialog');
-          alert('데이터가 복원되었습니다.');
-        } catch (e) {
-          alert('올바른 백업 형식이 아닙니다.');
-        }
-      };
-
-      renderTable();
-    });
-  </script>
-</body>
-</html>
+        var
