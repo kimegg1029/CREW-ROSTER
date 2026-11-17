@@ -65,6 +65,7 @@
       color: var(--text);
       padding-bottom: 40px;
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
 
     main {
@@ -73,6 +74,15 @@
       padding: 16px 14px;
       min-height: 100vh;
       touch-action: pan-y;
+    }
+
+    /* 스와이프 모션 대상 영역 */
+    .swipe-stage {
+      will-change: transform, opacity;
+      transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.24s ease;
+    }
+    .swipe-stage.is-dragging {
+      transition: none;
     }
 
     header { text-align: center; margin-bottom: 16px; }
@@ -350,25 +360,27 @@
       <h1>CREW ROSTER</h1>
     </header>
 
-    <section class="month-bar">
-      <div class="month-title" id="current-month-label">11월</div>
-    </section>
+    <div class="swipe-stage" id="swipe-stage">
+      <section class="month-bar">
+        <div class="month-title" id="current-month-label">11월</div>
+      </section>
 
-    <section class="table-card">
-      <table>
-        <thead>
-          <tr>
-            <th>날짜</th>
-            <th>요일</th>
-            <th>구분</th>
-            <th>편명 / 일정</th>
-            <th>Show up</th>
-            <th>Oju</th>
-          </tr>
-        </thead>
-        <tbody id="roster-tbody"></tbody>
-      </table>
-    </section>
+      <section class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>날짜</th>
+              <th>요일</th>
+              <th>구분</th>
+              <th>편명 / 일정</th>
+              <th>Show up</th>
+              <th>Oju</th>
+            </tr>
+          </thead>
+          <tbody id="roster-tbody"></tbody>
+        </table>
+      </section>
+    </div>
 
     <div class="legend">
       <span id="legend-비행"><i style="background:var(--flight-badge)"></i>비행</span>
@@ -461,10 +473,12 @@
         <h2>데이터 백업 / 복원</h2>
         <button type="button" class="btn-secondary" data-close="backup-dialog">✕</button>
       </div>
+      <p class="dialog-desc">백업 데이터를 복사하거나, 복원할 데이터를 붙여넣은 뒤 <b>[적용]</b>을 누르세요.</p>
       <textarea id="backup-textarea"></textarea>
-      <div class="dialog-footer">
-        <button type="button" class="btn-secondary btn-full" id="btn-copy-backup">복사</button>
-        <button type="button" class="btn-primary btn-full" id="btn-paste-restore">붙여넣기</button>
+      <div class="dialog-footer" style="display:flex; gap:6px;">
+        <button type="button" class="btn-secondary" id="btn-copy-backup" style="flex:1;">복사</button>
+        <button type="button" class="btn-secondary" id="btn-paste-clipboard" style="flex:1;">붙여넣기</button>
+        <button type="button" class="btn-primary" id="btn-apply-restore" style="flex:1;">적용</button>
       </div>
     </div>
   </div>
@@ -717,38 +731,89 @@
 
     function initSwipeGesture() {
       var container = document.getElementById('swipe-container');
+      var stage = document.getElementById('swipe-stage');
       var startX = 0;
       var startY = 0;
+      var isHorizontal = null;
+      var isAnimating = false;
 
       container.addEventListener('touchstart', function(e) {
+        if (isAnimating) return;
         startX = e.changedTouches[0].screenX;
         startY = e.changedTouches[0].screenY;
+        isHorizontal = null;
+        stage.classList.add('is-dragging');
+      }, { passive: true });
+
+      container.addEventListener('touchmove', function(e) {
+        if (isAnimating) return;
+        var curX = e.changedTouches[0].screenX;
+        var curY = e.changedTouches[0].screenY;
+        var diffX = curX - startX;
+        var diffY = curY - startY;
+
+        if (isHorizontal === null && (Math.abs(diffX) > 8 || Math.abs(diffY) > 8)) {
+          isHorizontal = Math.abs(diffX) > Math.abs(diffY);
+        }
+
+        if (isHorizontal) {
+          var dragOffset = diffX * 0.45;
+          var opacity = Math.max(0.45, 1 - Math.abs(diffX) / 420);
+          stage.style.transform = 'translateX(' + dragOffset + 'px)';
+          stage.style.opacity = opacity;
+        }
       }, { passive: true });
 
       container.addEventListener('touchend', function(e) {
+        if (isAnimating) return;
+        stage.classList.remove('is-dragging');
+
         var endX = e.changedTouches[0].screenX;
-        var endY = e.changedTouches[0].screenY;
         var diffX = endX - startX;
-        var diffY = endY - startY;
 
-        // 수평 스와이프 거리가 65px 이상이고 수직 움직임보다 클 때 동작
-        if (Math.abs(diffX) > 65 && Math.abs(diffX) > Math.abs(diffY)) {
-          var parts = currentYearMonth.split('-');
-          var year = Number(parts[0]);
-          var month = Number(parts[1]);
+        if (isHorizontal && Math.abs(diffX) > 65) {
+          isAnimating = true;
+          var direction = diffX > 0 ? 1 : -1; // 1: 오른쪽 스와이프(이전달), -1: 왼쪽 스와이프(다음달)
 
-          if (diffX > 0) {
-            // 오른쪽으로 스와이프 -> 전월 이동
-            month--;
-            if (month < 1) { month = 12; year--; }
-          } else {
-            // 왼쪽으로 스와이프 -> 익월 이동
-            month++;
-            if (month > 12) { month = 1; year++; }
-          }
+          // 현재 화면이 밀려 나가는 모션
+          stage.style.transform = 'translateX(' + (direction * 110) + 'px)';
+          stage.style.opacity = '0';
 
-          currentYearMonth = year + '-' + String(month).padStart(2, '0');
-          renderTable();
+          setTimeout(function() {
+            var parts = currentYearMonth.split('-');
+            var year = Number(parts[0]);
+            var month = Number(parts[1]);
+
+            if (direction > 0) {
+              month--;
+              if (month < 1) { month = 12; year--; }
+            } else {
+              month++;
+              if (month > 12) { month = 1; year++; }
+            }
+
+            currentYearMonth = year + '-' + String(month).padStart(2, '0');
+            renderTable();
+
+            // 반대편에서 새로 들어올 시작 위치 세팅
+            stage.classList.add('is-dragging');
+            stage.style.transform = 'translateX(' + (-direction * 110) + 'px)';
+            stage.style.opacity = '0';
+            void stage.offsetWidth; // 리플로우 강제 적용
+
+            // 제자리로 부드럽게 미끄러져 들어오는 모션
+            stage.classList.remove('is-dragging');
+            stage.style.transform = 'translateX(0)';
+            stage.style.opacity = '1';
+
+            setTimeout(function() {
+              isAnimating = false;
+            }, 240);
+          }, 200);
+        } else {
+          // 스와이프 거리가 짧으면 탄력 있게 제자리 복귀
+          stage.style.transform = 'translateX(0)';
+          stage.style.opacity = '1';
         }
       }, { passive: true });
     }
@@ -979,12 +1044,33 @@
       };
 
       document.getElementById('btn-copy-backup').onclick = function () {
-        document.getElementById('backup-textarea').select();
-        document.execCommand('copy');
-        alert('백업 데이터 복사됨');
+        var ta = document.getElementById('backup-textarea');
+        ta.value = JSON.stringify({ roster: rosterData, oju: ojuData, colors: customColors }, null, 2);
+        ta.select();
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(ta.value).then(function () {
+            alert('백업 데이터가 클립보드에 복사되었습니다.');
+          });
+        } else {
+          document.execCommand('copy');
+          alert('백업 데이터가 복사되었습니다.');
+        }
       };
 
-      document.getElementById('btn-paste-restore').onclick = function () {
+      document.getElementById('btn-paste-clipboard').onclick = function () {
+        if (navigator.clipboard?.readText) {
+          navigator.clipboard.readText().then(function (text) {
+            document.getElementById('backup-textarea').value = text;
+            alert('클립보드 내용을 붙여넣었습니다. [적용] 버튼을 눌러주세요.');
+          }).catch(function () {
+            alert('브라우저 권한 문제로 직접 붙여넣기를 해주세요.');
+          });
+        } else {
+          alert('텍스트 입력창을 길게 눌러 붙여넣기 후 [적용]을 눌러주세요.');
+        }
+      };
+
+      document.getElementById('btn-apply-restore').onclick = function () {
         var val = document.getElementById('backup-textarea').value;
         try {
           var parsed = JSON.parse(val);
@@ -1000,9 +1086,9 @@
           }
           saveAll();
           closeModal('backup-dialog');
-          alert('복원 완료!');
+          alert('데이터가 성공적으로 적용(복원)되었습니다!');
         } catch (e) {
-          alert('형식이 올바르지 않습니다.');
+          alert('올바르지 않은 JSON 형식입니다. 텍스트를 다시 확인해주세요.');
         }
       };
 
