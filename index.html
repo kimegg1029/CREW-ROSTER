@@ -407,11 +407,9 @@
         <input type="checkbox" id="modal-layover-checkbox" style="accent-color:var(--layover-border);" />
       </label>
 
-      <label class="field-label">편명 (숫자만 입력 시 ZE 자동 부착)</label>
-      <input type="text" id="modal-flight-input" placeholder="예: 861 또는 ZE601" />
-
-      <label class="field-label">일정 / 노선 / 메모</label>
-      <input type="text" id="modal-schedule-input" placeholder="예: ICN-NRT 또는 체류" />
+      <!-- 다시 하나로 합쳐진 편명 / 일정 통합 입력 칸 -->
+      <label class="field-label">편명 / 일정 (숫자만 입력 시 ZE 자동 부착)</label>
+      <input type="text" id="modal-schedule-input" placeholder="예: 861 ICN-NRT" />
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <label class="field-label" style="margin:0;">Show up 시간</label>
@@ -448,8 +446,8 @@
         <h2>Manual 일괄 입력</h2>
         <button type="button" class="btn-secondary" data-close="manual-dialog">✕</button>
       </div>
-      <p class="dialog-desc"><b>YYYY-MM-DD | 구분 | 편명 | 일정 | Show-up</b> 형식 입력</p>
-      <textarea id="manual-textarea" placeholder="2026-11-18 | 비행 | ZE535 | ICN-NRT | 06:30"></textarea>
+      <p class="dialog-desc"><b>YYYY-MM-DD | 구분 | 일정/편명 | Show-up</b> 형식 입력</p>
+      <textarea id="manual-textarea" placeholder="2026-11-18 | 비행 | ZE535 ICN-NRT | 06:30"></textarea>
       <div class="dialog-footer">
         <button type="button" class="btn-secondary btn-full" data-close="manual-dialog">취소</button>
         <button type="button" class="btn-primary btn-full" id="btn-apply-manual">저장하기</button>
@@ -485,12 +483,7 @@
     var DAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
     var TYPES_ORDER = ['비행', 'DH', '휴무', '교육', '기타'];
 
-    var AI_PROMPT_TEXT = '너는 이스타항공(ZE) 전문 승무원 근무표 파서다. 아래 규칙에 맞춰 YYYY-MM-DD | 구분 | 편명 | 일정/노선 | Show-up 형식으로만 출력할 것.\n\n' +
-      '1. 날짜(YYYY-MM-DD), 오늘부터의 일정만 대상\n' +
-      '2. 구분: 비행, DH, 휴무(PV 포함), 교육, 기타 중 하나\n' +
-      '3. 편명: ZE 편명인 경우 숫자만 또는 ZE포함 기입 (예: 861 또는 ZE861), 없으면 빈칸\n' +
-      '4. 일정/노선: ICN-NRT 등 노선 또는 체류 메모 기입\n' +
-      '5. Show-up: 출근 시각 (HH:MM) 또는 없으면 -';
+    var AI_PROMPT_TEXT = '너는 이스타항공(ZE) 승무원 근무표 파서다. YYYY-MM-DD | 구분 | 일정/편명 | Show-up 형식으로만 출력할 것.';
 
     var now = new Date();
     var currentYearMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
@@ -605,12 +598,10 @@
         var curDate = keys[i], prevDate = keys[i - 1];
         if (getDateOffsetStr(prevDate, 1) === curDate) {
           var curEnt = rosterData[curDate], prevEnt = rosterData[prevDate];
-          if (curEnt && prevEnt && curEnt.flight && prevEnt.flight) {
-            var curM = curEnt.flight.match(/(ZE\d+)/i), prevM = prevEnt.flight.match(/(ZE\d+)/i);
-            if (curM && prevM && curM[1].toUpperCase() === prevM[1].toUpperCase()) {
-              if (!curEnt.schedule || (!curEnt.schedule.includes('체류') && !curEnt.schedule.includes('LAYOVER'))) {
-                curEnt.schedule = (curEnt.schedule ? curEnt.schedule + ' ' : '') + '(체류)';
-              }
+          if (curEnt && prevEnt && curEnt.schedule && prevEnt.schedule) {
+            var curM = curEnt.schedule.match(/(ZE\d+)/i), prevM = prevEnt.schedule.match(/(ZE\d+)/i);
+            if (curM && prevM && curM[1].toUpperCase() === prevM[1].toUpperCase() && !curEnt.schedule.includes('체류')) {
+              curEnt.schedule = curM[1].toUpperCase() + ' (체류)';
             }
           }
         }
@@ -668,12 +659,8 @@
 
         var dayClass = dayIdx === 0 ? 'sun' : (dayIdx === 6 ? 'sat' : '');
         var badgeHtml = entry?.type ? '<span class="badge ' + entry.type + '">' + entry.type + '</span>' : '<span class="badge empty">-</span>';
+        var scheduleText = entry?.schedule ? escapeHtml(entry.schedule) : '<span style="color:var(--text-sub)">-</span>';
         
-        var flightText = entry?.flight ? escapeHtml(entry.flight) : '';
-        var scheduleText = entry?.schedule ? escapeHtml(entry.schedule) : '';
-        var combinedText = (flightText && scheduleText) ? (flightText + ' ' + scheduleText) : (flightText || scheduleText);
-        var displayedContent = combinedText ? combinedText : '<span style="color:var(--text-sub)">-</span>';
-
         var tagHtml = '';
         if (isPkg) tagHtml += '<span class="pkg-tag">PKG</span>';
         if (isLay) tagHtml += '<span class="layover-tag">NS</span>';
@@ -684,7 +671,7 @@
           '<td class="' + dayClass + '">' + dd + (isToday ? '<div style="font-size:7px; color:var(--today-accent); line-height:1; font-weight:800; margin-top:1px;">TODAY</div>' : '') + '</td>' +
           '<td class="' + dayClass + '">' + dayName + '</td>' +
           '<td class="cell-type">' + badgeHtml + '</td>' +
-          '<td class="cell-edit">' + tagHtml + displayedContent + '</td>' +
+          '<td class="cell-edit">' + tagHtml + scheduleText + '</td>' +
           '<td class="cell-edit">' + showUpHtml + '</td>' +
           '<td class="cell-oju">' + (hasOju ? '🧪' : '<span style="color:var(--border);">·</span>') + '</td>';
 
@@ -693,7 +680,7 @@
             e.stopPropagation();
             if (isPakageMode || isLayoverMode) return;
             if (!rosterData[targetDate]) {
-              rosterData[targetDate] = { type: TYPES_ORDER[0], flight: '', schedule: '', showUp: '-', isPakage: false, isLayover: false };
+              rosterData[targetDate] = { type: TYPES_ORDER[0], schedule: '', showUp: '-', isPakage: false, isLayover: false };
             } else {
               var idx = TYPES_ORDER.indexOf(rosterData[targetDate].type);
               rosterData[targetDate].type = TYPES_ORDER[(idx + 1) % TYPES_ORDER.length];
@@ -711,11 +698,11 @@
 
           tr.onclick = function () {
             if (isPakageMode) {
-              if (!rosterData[targetDate]) rosterData[targetDate] = { type: '비행', flight: '', schedule: '', showUp: '-', isPakage: true, isLayover: false };
+              if (!rosterData[targetDate]) rosterData[targetDate] = { type: '비행', schedule: '', showUp: '-', isPakage: true, isLayover: false };
               else rosterData[targetDate].isPakage = !rosterData[targetDate].isPakage;
               saveAll();
             } else if (isLayoverMode) {
-              if (!rosterData[targetDate]) rosterData[targetDate] = { type: '비행', flight: '', schedule: '', showUp: '-', isPakage: false, isLayover: true };
+              if (!rosterData[targetDate]) rosterData[targetDate] = { type: '비행', schedule: '', showUp: '-', isPakage: false, isLayover: true };
               else rosterData[targetDate].isLayover = !rosterData[targetDate].isLayover;
               saveAll();
             } else {
@@ -775,14 +762,14 @@
 
     function openEditModal(dateStr) {
       editingDateStr = dateStr;
-      var cur = rosterData[dateStr] || { type: '비행', flight: '', schedule: '', showUp: '-', isPakage: false, isLayover: false };
+      var cur = rosterData[dateStr] || { type: '비행', schedule: '', showUp: '-', isPakage: false, isLayover: false };
       var parts = dateStr.split('-');
       document.getElementById('modal-date-title').textContent = Number(parts[1]) + '월 ' + Number(parts[2]) + '일 일정 편집';
       document.getElementById('modal-pkg-checkbox').checked = !!cur.isPakage;
       document.getElementById('modal-layover-checkbox').checked = !!cur.isLayover;
       
-      document.getElementById('modal-flight-input').value = cur.flight || '';
-      document.getElementById('modal-schedule-input').value = cur.schedule || '';
+      // 입력칸에 기본 '-'가 뜨지 않도록 빈 문자열 처리
+      document.getElementById('modal-schedule-input').value = (cur.schedule === '-' ? '' : (cur.schedule || ''));
 
       openModal('edit-dialog');
       setTimeout(function () { setWheelTime(cur.showUp); }, 30);
@@ -879,23 +866,24 @@
       document.getElementById('modal-btn-save').onclick = function () {
         if (!editingDateStr) return;
         var exType = rosterData[editingDateStr]?.type || '비행';
-        var flightInput = document.getElementById('modal-flight-input').value.trim();
-        var scheduleVal = document.getElementById('modal-schedule-input').value.trim();
+        var rawSched = document.getElementById('modal-schedule-input').value.trim();
         var isPkg = document.getElementById('modal-pkg-checkbox').checked;
         var isLay = document.getElementById('modal-layover-checkbox').checked;
         var showUp = isNoShowUp ? '-' : (selectedHour + ':' + selectedMin);
 
-        var finalFlight = flightInput;
-        if (finalFlight && /^\d+$/.test(finalFlight)) {
-          finalFlight = 'ZE' + finalFlight;
-        } else if (finalFlight) {
-          finalFlight = finalFlight.toUpperCase();
+        // 첫 단어가 숫자만 입력된 경우 자동으로 ZE 붙이기 처리 (예: "861 ICN-NRT" -> "ZE861 ICN-NRT")
+        var finalSched = rawSched;
+        if (finalSched) {
+          var tokens = finalSched.split(' ');
+          if (/^\d+$/.test(tokens[0])) {
+            tokens[0] = 'ZE' + tokens[0];
+            finalSched = tokens.join(' ');
+          }
         }
 
         rosterData[editingDateStr] = {
-          type: (scheduleVal.toUpperCase().includes('PV')) ? '휴무' : exType,
-          flight: finalFlight,
-          schedule: scheduleVal,
+          type: (finalSched.toUpperCase().includes('PV')) ? '휴무' : exType,
+          schedule: finalSched,
           showUp: showUp,
           isPakage: isPkg,
           isLayover: isLay
@@ -931,7 +919,6 @@
             if (rType.toUpperCase().includes('PV') || sched.toUpperCase().includes('PV')) rType = '휴무';
             rosterData[p[0]] = {
               type: TYPES_ORDER.includes(rType) ? rType : '비행',
-              flight: '',
               schedule: sched,
               showUp: p[3] || '-',
               isPakage: false,
