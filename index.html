@@ -377,3 +377,616 @@
 
     <section class="month-bar">
       <div class="month-title" id="current-month-label">11월</div>
+    </section>
+
+    <section class="table-card" aria-label="월간 승무원 근무표">
+      <table>
+        <thead>
+          <tr>
+            <th>날짜</th>
+            <th>요일</th>
+            <th>구분</th>
+            <th>편명 / 일정</th>
+            <th>Show up</th>
+            <th>Oju</th>
+          </tr>
+        </thead>
+        <tbody id="roster-tbody"></tbody>
+      </table>
+    </section>
+
+    <div class="legend" aria-label="근무 배경색 안내">
+      <span><i style="background:var(--flight-badge)"></i>비행</span>
+      <span><i style="background:var(--dh-badge)"></i>DH</span>
+      <span><i style="background:var(--off-badge)"></i>휴무</span>
+      <span><i style="background:var(--edu-badge)"></i>교육</span>
+      <span><i style="background:var(--pkg-border)"></i>Pakage</span>
+    </div>
+
+    <!-- 하단 편집 영역 -->
+    <div class="bottom-controls">
+      <div class="edit-toolbar" id="edit-toolbar">
+        <button type="button" class="btn-secondary" id="btn-toggle-pkg-mode" style="flex:1;">📦 Pakage 모드</button>
+        <button type="button" class="btn-secondary" id="btn-theme-toggle" style="flex:1;">☀️/🌙 테마</button>
+        <button type="button" class="btn-secondary" id="btn-open-manual" style="flex:1;">Manual</button>
+        <button type="button" class="btn-secondary" id="btn-copy-prompt" style="flex:1;">AI 프롬프트</button>
+        <button type="button" class="btn-secondary" id="btn-open-backup" style="flex:1;">백업/복원</button>
+      </div>
+      <button type="button" class="btn-secondary" id="btn-toggle-edit" style="width:120px;">편집</button>
+    </div>
+  </main>
+
+  <!-- 상세 편집 모달 -->
+  <div class="modal-backdrop" id="edit-dialog">
+    <div class="modal-box">
+      <div class="dialog-header">
+        <h2 id="modal-date-title">일정 편집</h2>
+        <button type="button" class="btn-secondary" data-close="edit-dialog">✕</button>
+      </div>
+
+      <label class="pkg-toggle-card" for="modal-pkg-checkbox">
+        <span>📦 Pakage 구간 포함 (연속 테두리)</span>
+        <input type="checkbox" id="modal-pkg-checkbox" />
+      </label>
+
+      <label class="field-label">편명 / 일정</label>
+      <input type="text" id="modal-schedule-input" placeholder="예: ZE601 ICN-NRT 또는 체류" />
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <label class="field-label" style="margin:0;">Show up 시간 (24시간 / 10분 단위)</label>
+        <button type="button" id="btn-clear-showup" style="padding:3px 8px; font-size:11px; background:var(--border); color:var(--text);">시간 없음(-)</button>
+      </div>
+
+      <div class="wheel-picker-wrap" id="showup-wheel-wrap">
+        <div class="wheel-highlight"></div>
+        <div class="wheel-col" id="wheel-hour"></div>
+        <span style="font-weight:800; font-size:18px;">:</span>
+        <div class="wheel-col" id="wheel-min"></div>
+      </div>
+
+      <div class="dialog-footer">
+        <button type="button" class="btn-secondary" id="modal-btn-delete" style="color:#ef4444; border-color:#fca5a5;">일정 삭제</button>
+        <button type="button" class="btn-primary btn-full" id="modal-btn-save">저장하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manual 모달 -->
+  <div class="modal-backdrop" id="manual-dialog">
+    <div class="modal-box">
+      <div class="dialog-header">
+        <h2>Manual 일괄 입력</h2>
+        <button type="button" class="btn-secondary" data-close="manual-dialog">✕</button>
+      </div>
+      <p class="dialog-desc">
+        <b>YYYY-MM-DD | 구분 | 일정 | Show-up</b> 형식으로 입력하세요.<br/>
+        (PV 포함 시 자동으로 휴무 처리됩니다)
+      </p>
+      <textarea id="manual-textarea" placeholder="2026-11-18 | 비행 | ZE535 | 06:30"></textarea>
+      <div class="dialog-footer">
+        <button type="button" class="btn-secondary btn-full" data-close="manual-dialog">취소</button>
+        <button type="button" class="btn-primary btn-full" id="btn-apply-manual">저장하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 백업 모달 -->
+  <div class="modal-backdrop" id="backup-dialog">
+    <div class="modal-box">
+      <div class="dialog-header">
+        <h2>데이터 백업 / 복원</h2>
+        <button type="button" class="btn-secondary" data-close="backup-dialog">✕</button>
+      </div>
+      <textarea id="backup-textarea"></textarea>
+      <div class="dialog-footer">
+        <button type="button" class="btn-secondary btn-full" id="btn-copy-backup">복사</button>
+        <button type="button" class="btn-primary btn-full" id="btn-restore-backup">복원</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (var i = 0; i < registrations.length; i++) registrations[i].unregister();
+      });
+    }
+
+    var STORAGE_ROSTER = 'eastar_crew_roster_v4';
+    var STORAGE_OJU = 'eastar_crew_oju_v4';
+    var STORAGE_THEME = 'eastar_crew_theme';
+    var DAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
+    var TYPES_ORDER = ['비행', 'DH', '휴무', '교육', '기타'];
+
+    var AI_PROMPT_TEXT =
+      '너는 이스타항공(ZE) 승무원 월간 근무표 파서야.\n' +
+      '제공된 사진이나 텍스트의 모든 날짜별 스케줄을 아래 규칙에 맞춰 YYYY-MM-DD | 구분 | 일정 | Show-up 형식의 텍스트로만 변환해 줘. 다른 설명은 하지 마.\n\n' +
+      '[규칙]\n' +
+      '1. date: "YYYY-MM-DD" 형식 (연월 정보가 없으면 현재 월 기준)\n' +
+      '2. type: 반드시 "비행", "DH", "휴무", "교육", "기타" 중 하나로 매칭 (PV가 포함된 일정은 휴무로 지정)\n' +
+      '3. schedule: 편명 및 노선 또는 일정명 (예: "ZE535", 연속되는 동일 편명 체류인 경우 체류 일정 반영)\n' +
+      '4. showUp: 출근 시각 "HH:MM" (24시간제, 출근 시각이 없으면 "-")';
+
+    var now = new Date();
+    var currentYearMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    var rosterData = {};
+    var ojuData = {};
+    var editingDateStr = null;
+    var selectedHour = '06';
+    var selectedMin = '00';
+    var isNoShowUp = false;
+    var isPakageMode = false;
+
+    // 테마 초기화
+    var savedTheme = localStorage.getItem(STORAGE_THEME) || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
+    // 하드코딩된 Oju Vial 기본 데이터 설정 (11월, 12월 지정 날짜들)
+    var DEFAULT_OJU_DATES = [
+      '2026-11-18', '2026-11-19', '2026-11-20', '2026-11-25', '2026-11-26', '2026-11-27', '2026-11-28',
+      '2026-12-02', '2026-12-03', '2026-12-04', '2026-12-09', '2026-12-10', '2026-12-11',
+      '2026-12-17', '2026-12-18', '2026-12-19', '2026-12-23', '2026-12-24', '2026-12-25', '2026-12-26'
+    ];
+
+    try {
+      var savedR = JSON.parse(localStorage.getItem(STORAGE_ROSTER) || '{}');
+      if (savedR && typeof savedR === 'object' && !Array.isArray(savedR)) rosterData = savedR;
+      
+      var savedO = localStorage.getItem(STORAGE_OJU);
+      if (savedO) {
+        ojuData = JSON.parse(savedO);
+      } else {
+        // 최초 접속 시 하드코딩된 Oju 날짜 자동 세팅
+        for (var i = 0; i < DEFAULT_OJU_DATES.length; i++) {
+          ojuData[DEFAULT_OJU_DATES[i]] = true;
+        }
+        localStorage.setItem(STORAGE_OJU, JSON.stringify(ojuData));
+      }
+    } catch (e) {
+      rosterData = {};
+      ojuData = {};
+    }
+
+    function getCutoffTimestamp() {
+      var t = new Date();
+      t.setHours(0, 0, 0, 0);
+      t.setDate(t.getDate() - 2);
+      return t.getTime();
+    }
+
+    function purgeOldStorage() {
+      var cutoffTime = getCutoffTimestamp();
+      var rKeys = Object.keys(rosterData);
+      for (var i = 0; i < rKeys.length; i++) {
+        var d = new Date(rKeys[i] + 'T00:00:00');
+        if (!isNaN(d.getTime()) && d.getTime() < cutoffTime) delete rosterData[rKeys[i]];
+      }
+      var oKeys = Object.keys(ojuData);
+      for (var j = 0; j < oKeys.length; j++) {
+        var od = new Date(oKeys[j] + 'T00:00:00');
+        if (!isNaN(od.getTime()) && od.getTime() < cutoffTime) delete ojuData[oKeys[j]];
+      }
+      localStorage.setItem(STORAGE_ROSTER, JSON.stringify(rosterData));
+      localStorage.setItem(STORAGE_OJU, JSON.stringify(ojuData));
+    }
+    purgeOldStorage();
+
+    function saveAll() {
+      localStorage.setItem(STORAGE_ROSTER, JSON.stringify(rosterData));
+      localStorage.setItem(STORAGE_OJU, JSON.stringify(ojuData));
+      renderTable();
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, function (m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+      });
+    }
+
+    function getTodayStr() {
+      var t = new Date();
+      return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+    }
+
+    function getDateOffsetStr(dateStr, offsetDays) {
+      var parts = dateStr.split('-');
+      var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]) + offsetDays);
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function processLayoverSchedules() {
+      var keys = Object.keys(rosterData).sort();
+      for (var i = 1; i < keys.length; i++) {
+        var curDate = keys[i];
+        var prevDate = keys[i - 1];
+        if (getDateOffsetStr(prevDate, 1) === curDate) {
+          var curEnt = rosterData[curDate];
+          var prevEnt = rosterData[prevDate];
+          if (curEnt && prevEnt && curEnt.schedule && prevEnt.schedule) {
+            var curFlightMatch = curEnt.schedule.match(/(ZE\d+)/i);
+            var prevFlightMatch = prevEnt.schedule.match(/(ZE\d+)/i);
+            if (curFlightMatch && prevFlightMatch && curFlightMatch[1].toUpperCase() === prevFlightMatch[1].toUpperCase()) {
+              if (!curEnt.schedule.includes('체류') && !curEnt.schedule.includes('LAYOVER')) {
+                curEnt.schedule = curFlightMatch[1].toUpperCase() + ' (체류)';
+              }
+            }
+          }
+        }
+      }
+    }
+
+    function renderTable() {
+      processLayoverSchedules();
+
+      var parts = currentYearMonth.split('-');
+      var year = Number(parts[0]);
+      var month = Number(parts[1]);
+
+      document.getElementById('current-month-label').textContent = month + '월';
+
+      var lastDay = new Date(year, month, 0).getDate();
+      var tbody = document.getElementById('roster-tbody');
+      tbody.innerHTML = '';
+
+      var todayStr = getTodayStr();
+      var cutoffTime = getCutoffTimestamp();
+
+      for (var d = 1; d <= lastDay; d++) {
+        var dd = String(d).padStart(2, '0');
+        var dateStr = currentYearMonth + '-' + dd;
+        var rowDateObj = new Date(year, month - 1, d);
+        rowDateObj.setHours(0, 0, 0, 0);
+
+        if (rowDateObj.getTime() < cutoffTime) continue;
+
+        var dayIdx = rowDateObj.getDay();
+        var dayName = DAYS_KO[dayIdx];
+        var entry = rosterData[dateStr];
+        var hasOju = !!ojuData[dateStr];
+
+        var tr = document.createElement('tr');
+        var isToday = (dateStr === todayStr);
+        var rowClasses = [];
+
+        if (entry && entry.type) rowClasses.push('type-' + entry.type);
+        if (isToday) rowClasses.push('is-today');
+
+        var isPkg = !!(entry && entry.isPakage);
+        if (isPkg) {
+          rowClasses.push('pkg-row');
+          var prevPkg = !!(rosterData[getDateOffsetStr(dateStr, -1)] && rosterData[getDateOffsetStr(dateStr, -1)].isPakage);
+          var nextPkg = !!(rosterData[getDateOffsetStr(dateStr, 1)] && rosterData[getDateOffsetStr(dateStr, 1)].isPakage);
+          if (!prevPkg) rowClasses.push('pkg-start');
+          if (!nextPkg) rowClasses.push('pkg-end');
+        }
+
+        if (rowClasses.length > 0) tr.className = rowClasses.join(' ');
+
+        var dayClass = dayIdx === 0 ? 'sun' : (dayIdx === 6 ? 'sat' : '');
+
+        var badgeHtml = (entry && entry.type)
+          ? '<span class="badge ' + entry.type + '">' + entry.type + '</span>'
+          : '<span class="badge empty">-</span>';
+
+        var scheduleText = entry && entry.schedule ? escapeHtml(entry.schedule) : '<span style="color:var(--text-sub)">-</span>';
+        var pkgTagHtml = isPkg ? '<span class="pkg-tag">PKG</span>' : '';
+        var showUpHtml = (entry && entry.showUp && entry.showUp !== '-')
+          ? escapeHtml(entry.showUp.replace(':', ' : '))
+          : '<span style="color:var(--text-sub)">-</span>';
+
+        var ojuMark = hasOju ? '🧪' : '<span style="color:var(--border);">·</span>';
+
+        tr.innerHTML =
+          '<td class="' + dayClass + '">' + dd + (isToday ? '<div style="font-size:8px; color:var(--today-accent); line-height:1;">TODAY</div>' : '') + '</td>' +
+          '<td class="' + dayClass + '">' + dayName + '</td>' +
+          '<td class="cell-type">' + badgeHtml + '</td>' +
+          '<td class="cell-edit">' + pkgTagHtml + scheduleText + '</td>' +
+          '<td class="cell-edit">' + showUpHtml + '</td>' +
+          '<td class="cell-oju">' + ojuMark + '</td>';
+
+        (function (targetDate) {
+          tr.querySelector('.cell-type').onclick = function (e) {
+            e.stopPropagation();
+            if (isPakageMode) return;
+            cycleRowType(targetDate);
+          };
+
+          tr.querySelector('.cell-oju').onclick = function (e) {
+            e.stopPropagation();
+            if (isPakageMode) return;
+            if (ojuData[targetDate]) delete ojuData[targetDate];
+            else ojuData[targetDate] = true;
+            saveAll();
+          };
+
+          tr.onclick = function () {
+            if (isPakageMode) {
+              if (!rosterData[targetDate]) {
+                rosterData[targetDate] = { type: '비행', schedule: '', showUp: '-', isPakage: true };
+              } else {
+                rosterData[targetDate].isPakage = !rosterData[targetDate].isPakage;
+              }
+              saveAll();
+            } else {
+              openEditModal(targetDate);
+            }
+          };
+        })(dateStr);
+
+        tbody.appendChild(tr);
+      }
+    }
+
+    function cycleRowType(dateStr) {
+      if (!rosterData[dateStr]) {
+        rosterData[dateStr] = { type: TYPES_ORDER[0], schedule: '', showUp: '-', isPakage: false };
+      } else {
+        var curIdx = TYPES_ORDER.indexOf(rosterData[dateStr].type);
+        var nextIdx = (curIdx + 1) % TYPES_ORDER.length;
+        rosterData[dateStr].type = TYPES_ORDER[nextIdx];
+      }
+      saveAll();
+    }
+
+    function initWheelPicker() {
+      var hourCol = document.getElementById('wheel-hour');
+      var minCol = document.getElementById('wheel-min');
+
+      var hHtml = '<div class="wheel-spacer"></div>';
+      for (var h = 0; h < 24; h++) {
+        var hh = String(h).padStart(2, '0');
+        hHtml += '<div class="wheel-item" data-val="' + hh + '">' + hh + '</div>';
+      }
+      hHtml += '<div class="wheel-spacer"></div>';
+      hourCol.innerHTML = hHtml;
+
+      var mHtml = '<div class="wheel-spacer"></div>';
+      for (var m = 0; m < 60; m += 10) {
+        var mm = String(m).padStart(2, '0');
+        mHtml += '<div class="wheel-item" data-val="' + mm + '">' + mm + '</div>';
+      }
+      mHtml += '<div class="wheel-spacer"></div>';
+      minCol.innerHTML = mHtml;
+
+      function bindWheel(col, isHour) {
+        col.addEventListener('scroll', function () {
+          var idx = Math.round(col.scrollTop / 38);
+          var items = col.querySelectorAll('.wheel-item');
+          for (var i = 0; i < items.length; i++) items[i].classList.toggle('selected', i === idx);
+          if (items[idx]) {
+            isNoShowUp = false;
+            document.getElementById('showup-wheel-wrap').style.opacity = '1';
+            if (isHour) selectedHour = items[idx].getAttribute('data-val');
+            else selectedMin = items[idx].getAttribute('data-val');
+          }
+        });
+
+        col.addEventListener('click', function (e) {
+          if (e.target.classList.contains('wheel-item')) {
+            var items = Array.prototype.slice.call(col.querySelectorAll('.wheel-item'));
+            var idx = items.indexOf(e.target);
+            if (idx !== -1) col.scrollTo({ top: idx * 38, behavior: 'smooth' });
+          }
+        });
+      }
+
+      bindWheel(hourCol, true);
+      bindWheel(minCol, false);
+    }
+
+    function setWheelTime(timeStr) {
+      var hourCol = document.getElementById('wheel-hour');
+      var minCol = document.getElementById('wheel-min');
+      var wrap = document.getElementById('showup-wheel-wrap');
+
+      if (!timeStr || timeStr === '-') {
+        isNoShowUp = true;
+        wrap.style.opacity = '0.4';
+        selectedHour = '06';
+        selectedMin = '00';
+      } else {
+        isNoShowUp = false;
+        wrap.style.opacity = '1';
+        var clean = timeStr.replace(/\s+/g, '');
+        var parts = clean.split(':');
+        selectedHour = String(Number(parts[0] || 6)).padStart(2, '0');
+        var rawMin = Number(parts[1] || 0);
+        var roundedMin = Math.round(rawMin / 10) * 10;
+        if (roundedMin >= 60) roundedMin = 50;
+        selectedMin = String(roundedMin).padStart(2, '0');
+      }
+
+      var hIdx = Number(selectedHour);
+      var mIdx = Number(selectedMin) / 10;
+      hourCol.scrollTop = hIdx * 38;
+      minCol.scrollTop = mIdx * 38;
+
+      var hItems = hourCol.querySelectorAll('.wheel-item');
+      for (var i = 0; i < hItems.length; i++) hItems[i].classList.toggle('selected', i === hIdx);
+      var mItems = minCol.querySelectorAll('.wheel-item');
+      for (var j = 0; j < mItems.length; j++) mItems[j].classList.toggle('selected', j === mIdx);
+    }
+
+    function openEditModal(dateStr) {
+      editingDateStr = dateStr;
+      var cur = rosterData[dateStr] || { type: '비행', schedule: '', showUp: '-', isPakage: false };
+
+      var parts = dateStr.split('-');
+      document.getElementById('modal-date-title').textContent = Number(parts[1]) + '월 ' + Number(parts[2]) + '일 일정 편집';
+      document.getElementById('modal-pkg-checkbox').checked = !!cur.isPakage;
+      document.getElementById('modal-schedule-input').value = cur.schedule || '';
+
+      openModal('edit-dialog');
+      setTimeout(function () { setWheelTime(cur.showUp); }, 30);
+    }
+
+    var touchStartX = 0;
+    var touchStartY = 0;
+    var container = document.getElementById('swipe-container');
+    container.addEventListener('touchstart', function (e) {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    container.addEventListener('touchend', function (e) {
+      if (document.querySelector('.modal-backdrop.open')) return;
+      var diffX = e.changedTouches[0].screenX - touchStartX;
+      var diffY = e.changedTouches[0].screenY - touchStartY;
+      if (Math.abs(diffX) > 65 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+        var parts = currentYearMonth.split('-');
+        var y = Number(parts[0]), m = Number(parts[1]);
+        var d = diffX > 0 ? new Date(y, m - 2, 1) : new Date(y, m, 1);
+        currentYearMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        renderTable();
+      }
+    }, { passive: true });
+
+    window.addEventListener('DOMContentLoaded', function () {
+      initWheelPicker();
+
+      document.getElementById('btn-theme-toggle').onclick = function () {
+        var current = document.documentElement.getAttribute('data-theme');
+        var next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem(STORAGE_THEME, next);
+      };
+
+      document.getElementById('btn-toggle-edit').onclick = function () {
+        var tb = document.getElementById('edit-toolbar');
+        tb.classList.toggle('show');
+        this.textContent = tb.classList.contains('show') ? '편집 닫기' : '편집';
+        if (!tb.classList.contains('show') && isPakageMode) {
+          isPakageMode = false;
+          document.body.classList.remove('pkg-mode-active');
+          document.getElementById('btn-toggle-pkg-mode').classList.remove('active-mode');
+          document.getElementById('btn-toggle-pkg-mode').textContent = '📦 Pakage 모드';
+        }
+      };
+
+      document.getElementById('btn-toggle-pkg-mode').onclick = function () {
+        isPakageMode = !isPakageMode;
+        document.body.classList.toggle('pkg-mode-active', isPakageMode);
+        this.classList.toggle('active-mode', isPakageMode);
+        this.textContent = isPakageMode ? '📦 Pakage 모드 ON' : '📦 Pakage 모드';
+      };
+
+      var closeButtons = document.querySelectorAll('[data-close]');
+      for (var i = 0; i < closeButtons.length; i++) {
+        closeButtons[i].onclick = function () { closeModal(this.getAttribute('data-close')); };
+      }
+
+      document.getElementById('btn-clear-showup').onclick = function () {
+        isNoShowUp = true;
+        document.getElementById('showup-wheel-wrap').style.opacity = '0.4';
+      };
+
+      document.getElementById('modal-btn-save').onclick = function () {
+        if (!editingDateStr) return;
+        var existingType = (rosterData[editingDateStr] && rosterData[editingDateStr].type) ? rosterData[editingDateStr].type : '비행';
+        var scheduleVal = document.getElementById('modal-schedule-input').value.trim();
+        var isPkgVal = document.getElementById('modal-pkg-checkbox').checked;
+        var showUpVal = isNoShowUp ? '-' : (selectedHour + ':' + selectedMin);
+
+        rosterData[editingDateStr] = {
+          type: scheduleVal.toUpperCase().includes('PV') ? '휴무' : existingType,
+          schedule: scheduleVal,
+          showUp: showUpVal,
+          isPakage: isPkgVal
+        };
+        saveAll();
+        closeModal('edit-dialog');
+      };
+
+      document.getElementById('modal-btn-delete').onclick = function () {
+        if (!editingDateStr) return;
+        delete rosterData[editingDateStr];
+        saveAll();
+        closeModal('edit-dialog');
+      };
+
+      document.getElementById('btn-open-manual').onclick = function () {
+        openModal('manual-dialog');
+      };
+
+      document.getElementById('btn-copy-prompt').onclick = function () {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(AI_PROMPT_TEXT).then(function () {
+            alert('AI 프롬프트가 복사되었습니다!');
+          });
+        }
+      };
+
+      document.getElementById('btn-apply-manual').onclick = function () {
+        var lines = document.getElementById('manual-textarea').value.split('\n');
+        var count = 0;
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i].trim();
+          if (!line) continue;
+          var parts = line.split('|').map(function (s) { return s.trim(); });
+          var date = parts[0];
+          if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            var rawType = parts[1] || '비행';
+            var sched = parts[2] || '';
+            var showUp = parts[3] || '-';
+
+            if (rawType.toUpperCase().includes('PV') || sched.toUpperCase().includes('PV')) {
+              rawType = '휴무';
+            }
+
+            rosterData[date] = {
+              type: TYPES_ORDER.indexOf(rawType) !== -1 ? rawType : '비행',
+              schedule: sched,
+              showUp: showUp,
+              isPakage: false
+            };
+            count++;
+          }
+        }
+        if (count > 0) {
+          saveAll();
+          closeModal('manual-dialog');
+          alert(count + '일치 일정이 저장되었습니다.');
+        } else {
+          alert('저장할 유효한 일정이 없습니다.');
+        }
+      };
+
+      document.getElementById('btn-open-backup').onclick = function () {
+        document.getElementById('backup-textarea').value = JSON.stringify({ roster: rosterData, oju: ojuData }, null, 2);
+        openModal('backup-dialog');
+      };
+
+      document.getElementById('btn-copy-backup').onclick = function () {
+        var ta = document.getElementById('backup-textarea');
+        ta.select();
+        document.execCommand('copy');
+        alert('백업 데이터가 복사되었습니다.');
+      };
+
+      document.getElementById('btn-restore-backup').onclick = function () {
+        try {
+          var parsed = JSON.parse(document.getElementById('backup-textarea').value);
+          if (parsed && parsed.roster) {
+            rosterData = parsed.roster;
+            ojuData = parsed.oju || {};
+          } else if (parsed && typeof parsed === 'object') {
+            rosterData = parsed;
+          } else {
+            throw new Error();
+          }
+          saveAll();
+          closeModal('backup-dialog');
+          alert('데이터가 복원되었습니다.');
+        } catch (e) {
+          alert('올바른 백업 형식이 아닙니다.');
+        }
+      };
+
+      renderTable();
+    });
+  </script>
+</body>
+</html>
