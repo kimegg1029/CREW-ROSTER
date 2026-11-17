@@ -141,11 +141,10 @@
       overflow: hidden;
     }
 
-    /* 날짜, 요일, 구분 칸을 2줄 방지를 위해 폭을 꽉 조이되 고정 */
     th:nth-child(1), td:nth-child(1) { width: 34px; font-weight: 700; padding: 10px 0px; }
     th:nth-child(2), td:nth-child(2) { width: 28px; padding: 10px 0px; }
     th:nth-child(3), td:nth-child(3) { width: 54px; padding: 10px 1px; cursor: pointer; }
-    th:nth-child(4), td:nth-child(4) { width: auto; white-space: normal; } /* 편명 칸은 여러 글자 허용 */
+    th:nth-child(4), td:nth-child(4) { width: auto; white-space: normal; }
     th:nth-child(5), td:nth-child(5) { width: 58px; padding: 10px 1px; white-space: nowrap; font-weight: 600; font-variant-numeric: tabular-nums; }
     th:nth-child(6), td:nth-child(6) { width: 36px; padding: 10px 0px; white-space: nowrap; cursor: pointer; }
 
@@ -155,7 +154,6 @@
     tr.type-교육 { background-color: var(--edu-bg); }
     tr.type-기타 { background-color: var(--etc-bg); }
 
-    /* 패키지 모드일 때 적용되는 동적 배경색 클래스 */
     tr.pkg-row { background-color: var(--pkg-row-bg, rgba(139, 92, 246, 0.12)) !important; }
 
     tr.is-today {
@@ -379,17 +377,20 @@
       pointer-events: none;
     }
 
-    /* 컬러 팔레트 그리드 */
+    /* 40가지 컬러 팔레트 그리드 (5열 배치) */
     .color-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 10px;
+      gap: 8px;
       margin-top: 10px;
       margin-bottom: 14px;
+      max-height: 50vh;
+      overflow-y: auto;
+      padding-right: 4px;
     }
     .color-chip {
-      height: 42px;
-      border-radius: 10px;
+      height: 38px;
+      border-radius: 8px;
       border: 2px solid var(--border);
       cursor: pointer;
       transition: transform 0.1s;
@@ -483,14 +484,14 @@
     </div>
   </div>
 
-  <!-- 색상 커스텀 모달 -->
+  <!-- 색상 커스텀 모달 (40가지 보색 대비 팔레트) -->
   <div class="modal-backdrop" id="color-dialog">
     <div class="modal-box">
       <div class="dialog-header">
         <h2 id="color-modal-title">색상 선택</h2>
         <button type="button" class="btn-secondary" data-close="color-dialog">✕</button>
       </div>
-      <p class="dialog-desc">원하시는 색상을 선택하시면 해당 카테고리의 배경색과 배지 색상이 즉시 변경됩니다.</p>
+      <p class="dialog-desc">선명하고 뚜렷한 보색 대비를 이루는 40가지 팔레트 중 원하시는 색상을 선택하세요.</p>
       <div class="color-grid" id="color-palette-grid"></div>
       <button type="button" class="btn-secondary btn-full" data-close="color-dialog">닫기</button>
     </div>
@@ -540,7 +541,7 @@
     var STORAGE_ROSTER = 'eastar_crew_roster_v4';
     var STORAGE_OJU = 'eastar_crew_oju_v4';
     var STORAGE_THEME = 'eastar_crew_theme';
-    var STORAGE_COLORS = 'eastar_crew_colors_v3';
+    var STORAGE_COLORS = 'eastar_crew_colors_v4';
     var DAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
     var TYPES_ORDER = ['비행', 'DH', '휴무', '교육', '기타'];
 
@@ -584,9 +585,12 @@
     var isPakageMode = false;
     var editingColorType = null;
 
+    // 40가지 보색 대비가 뚜렷하고 선명한 컬러 팔레트
     var COLOR_PALETTE = [
-      '#2563eb', '#3b82f6', '#06b6d4', '#10b981', '#16a34a',
-      '#d97706', '#f97316', '#ef4444', '#c026d3', '#8b5cf6'
+      '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6',
+      '#ec4899', '#f43f5e', '#f97306', '#d97706', '#ca8a04', '#65a30d', '#059669', '#0891b2', '#2563eb', '#4f46e5',
+      '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#d97706', '#b45309', '#4d7c0f', '#047857', '#0e7490', '#1d4ed8',
+      '#4338ca', '#6d28d9', '#be185d', '#991b1b', '#9a3412', '#78350f', '#713f12', '#365314', '#065f46', '#155e75'
     ];
 
     var defaultColors = {
@@ -1129,7 +1133,6 @@
         alert('백업 데이터가 복사되었습니다.');
       };
 
-      // [붙여넣기 및 복원 기능] 클립보드 내용을 읽어와 저장하고 클립보드를 비움
       document.getElementById('btn-paste-restore').onclick = function () {
         if (!navigator.clipboard || !navigator.clipboard.readText) {
           alert('현재 브라우저 환경에서는 클립보드 읽기가 제한됩니다. 텍스트 박스에 직접 붙여넣고 복원을 진행해주세요.');
@@ -1139,7 +1142,6 @@
 
         navigator.clipboard.readText().then(function (clipText) {
           if (!clipText.trim()) {
-            // 클립보드가 비어있으면 텍스트area에 적힌 내용으로 시도
             tryRestoreFromTextarea();
             return;
           }
@@ -1172,7 +1174,6 @@
           }
           saveAll();
 
-          // 클립보드 내용 초기화(비우기)
           if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText('').catch(function(){});
           }
