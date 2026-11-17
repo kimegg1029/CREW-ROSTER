@@ -30,6 +30,7 @@
       --etc-bg: #f1f5f9;
       --etc-badge: #64748b;
       --pkg-border: #8b5cf6;
+      --layover-border: #ec4899;
       --today-bg: #fff1f2;
       --today-accent: #f43f5e;
     }
@@ -52,6 +53,7 @@
       --etc-bg: #222d42;
       --etc-badge: #94a3b8;
       --pkg-border: #a78bfa;
+      --layover-border: #f472b6;
       --today-bg: #3c121a;
       --today-accent: #fb7185;
     }
@@ -119,22 +121,9 @@
     tr.type-교육 { background-color: var(--edu-bg); }
     tr.type-기타 { background-color: var(--etc-bg); }
     tr.pkg-row { background-color: var(--pkg-row-bg, rgba(139, 92, 246, 0.12)) !important; }
+    tr.layover-row { background-color: var(--layover-row-bg, rgba(236, 72, 153, 0.12)) !important; }
 
-    @keyframes mobileLuxuryGlow {
-      0% { box-shadow: inset 0 0 0 1.5px var(--today-accent), 0 0 4px rgba(244, 63, 94, 0.25); }
-      50% { box-shadow: inset 0 0 0 2.5px var(--today-accent), 0 0 12px rgba(244, 63, 94, 0.6); }
-      100% { box-shadow: inset 0 0 0 1.5px var(--today-accent), 0 0 4px rgba(244, 63, 94, 0.25); }
-    }
-
-    tr.is-today {
-      background-color: var(--today-bg) !important;
-      -webkit-animation: mobileLuxuryGlow 2s ease-in-out infinite;
-      animation: mobileLuxuryGlow 2s ease-in-out infinite;
-      transform: translate3d(0, 0, 0);
-      -webkit-transform: translate3d(0, 0, 0);
-      position: relative;
-      z-index: 5;
-    }
+    tr.is-today { background-color: var(--today-bg) !important; }
     tr.is-today td:first-child { color: var(--today-accent); font-weight: 800; }
 
     tr.pkg-row td:first-child { border-left: 3px solid var(--pkg-border); }
@@ -142,8 +131,13 @@
     tr.pkg-start td { border-top: 2.5px solid var(--pkg-border); }
     tr.pkg-end td { border-bottom: 2.5px solid var(--pkg-border); }
 
-    body.pkg-mode-active tbody tr { cursor: pointer; }
-    body.pkg-mode-active tbody tr:hover { opacity: 0.8; }
+    tr.layover-row td:first-child { border-left: 3px solid var(--layover-border); }
+    tr.layover-row td:last-child { border-right: 3px solid var(--layover-border); }
+    tr.layover-start td { border-top: 2.5px solid var(--layover-border); }
+    tr.layover-end td { border-bottom: 2.5px solid var(--layover-border); }
+
+    body.pkg-mode-active tbody tr, body.layover-mode-active tbody tr { cursor: pointer; }
+    body.pkg-mode-active tbody tr:hover, body.layover-mode-active tbody tr:hover { opacity: 0.8; }
 
     .sun { color: #f43f5e; }
     .sat { color: #3b82f6; }
@@ -175,6 +169,18 @@
       font-weight: 800;
       color: var(--pkg-border);
       border: 1px solid var(--pkg-border);
+      border-radius: 3px;
+      padding: 0 2px;
+      margin-right: 2px;
+      vertical-align: middle;
+    }
+
+    .layover-tag {
+      display: inline-block;
+      font-size: 8.5px;
+      font-weight: 800;
+      color: var(--layover-border);
+      border: 1px solid var(--layover-border);
       border-radius: 3px;
       padding: 0 2px;
       margin-right: 2px;
@@ -229,6 +235,7 @@
     .btn-primary { background: var(--brand); color: #fff; box-shadow: 0 4px 12px rgba(244, 63, 94, 0.25); }
     .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
     .btn-secondary.active-mode { background: #7c3aed; color: #fff; border-color: #a78bfa; }
+    .btn-secondary.active-layover-mode { background: #db2777; color: #fff; border-color: #f472b6; }
     .btn-full { width: 100%; padding: 13px; font-size: 14px; }
 
     .modal-backdrop {
@@ -273,19 +280,19 @@
     input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--brand); }
     textarea { min-height: 140px; line-height: 1.5; resize: vertical; }
 
-    .pkg-toggle-card {
+    .toggle-card {
       display: flex;
       justify-content: space-between;
       align-items: center;
       background: var(--bg);
-      border: 1px solid var(--pkg-border);
+      border: 1px solid var(--border);
       border-radius: 12px;
       padding: 12px 16px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       cursor: pointer;
     }
-    .pkg-toggle-card span { font-size: 13.5px; font-weight: 700; color: var(--pkg-border); }
-    .pkg-toggle-card input { width: 18px; height: 18px; accent-color: var(--pkg-border); }
+    .toggle-card span { font-size: 13.5px; font-weight: 700; }
+    .toggle-card input { width: 18px; height: 18px; }
 
     .wheel-picker-wrap {
       display: flex;
@@ -369,11 +376,13 @@
       <span id="legend-교육"><i style="background:var(--edu-badge)"></i>교육</span>
       <span id="legend-기타"><i style="background:var(--etc-badge)"></i>기타</span>
       <span id="legend-Pakage"><i style="background:var(--pkg-border)"></i>Pakage</span>
+      <span id="legend-Layover"><i style="background:var(--layover-border)"></i>Layover</span>
     </div>
 
     <div class="bottom-controls">
       <div class="edit-toolbar" id="edit-toolbar">
         <button type="button" class="btn-secondary" id="btn-toggle-pkg-mode" style="flex:1;">📦 Pakage 모드</button>
+        <button type="button" class="btn-secondary" id="btn-toggle-layover-mode" style="flex:1;">✈️ Layover 모드</button>
         <button type="button" class="btn-secondary" id="btn-theme-toggle" style="flex:1;">☀️/🌙 테마</button>
         <button type="button" class="btn-secondary" id="btn-open-manual" style="flex:1;">Manual</button>
         <button type="button" class="btn-secondary" id="btn-copy-prompt" style="flex:1;">AI 프롬프트</button>
@@ -389,12 +398,21 @@
         <h2 id="modal-date-title">일정 편집</h2>
         <button type="button" class="btn-secondary" data-close="edit-dialog">✕</button>
       </div>
-      <label class="pkg-toggle-card" for="modal-pkg-checkbox">
-        <span>📦 Pakage 구간 포함 (연속 테두리)</span>
-        <input type="checkbox" id="modal-pkg-checkbox" />
+      <label class="toggle-card" for="modal-pkg-checkbox" style="border-color:var(--pkg-border);">
+        <span style="color:var(--pkg-border);">📦 Pakage 구간 포함</span>
+        <input type="checkbox" id="modal-pkg-checkbox" style="accent-color:var(--pkg-border);" />
       </label>
-      <label class="field-label">편명 / 일정</label>
-      <input type="text" id="modal-schedule-input" placeholder="예: ZE601 ICN-NRT" />
+      <label class="toggle-card" for="modal-layover-checkbox" style="border-color:var(--layover-border);">
+        <span style="color:var(--layover-border);">✈️ Layover 구간 포함 ([NS])</span>
+        <input type="checkbox" id="modal-layover-checkbox" style="accent-color:var(--layover-border);" />
+      </label>
+
+      <label class="field-label">편명 (숫자만 입력 시 ZE 자동 부착)</label>
+      <input type="text" id="modal-flight-input" placeholder="예: 861 또는 ZE601" />
+
+      <label class="field-label">일정 / 노선 / 메모</label>
+      <input type="text" id="modal-schedule-input" placeholder="예: ICN-NRT 또는 체류" />
+
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <label class="field-label" style="margin:0;">Show up 시간</label>
         <button type="button" id="btn-clear-showup" style="padding:4px 10px; font-size:11.5px; background:var(--border); color:var(--text);">시간 없음(-)</button>
@@ -430,8 +448,8 @@
         <h2>Manual 일괄 입력</h2>
         <button type="button" class="btn-secondary" data-close="manual-dialog">✕</button>
       </div>
-      <p class="dialog-desc"><b>YYYY-MM-DD | 구분 | 일정 | Show-up</b> 형식 입력</p>
-      <textarea id="manual-textarea" placeholder="2026-11-18 | 비행 | ZE535 | 06:30"></textarea>
+      <p class="dialog-desc"><b>YYYY-MM-DD | 구분 | 편명 | 일정 | Show-up</b> 형식 입력</p>
+      <textarea id="manual-textarea" placeholder="2026-11-18 | 비행 | ZE535 | ICN-NRT | 06:30"></textarea>
       <div class="dialog-footer">
         <button type="button" class="btn-secondary btn-full" data-close="manual-dialog">취소</button>
         <button type="button" class="btn-primary btn-full" id="btn-apply-manual">저장하기</button>
@@ -467,7 +485,12 @@
     var DAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
     var TYPES_ORDER = ['비행', 'DH', '휴무', '교육', '기타'];
 
-    var AI_PROMPT_TEXT = '너는 이스타항공(ZE) 승무원 근무표 파서다. YYYY-MM-DD | 구분 | 일정/편명 | Show-up 형식으로만 출력할 것.';
+    var AI_PROMPT_TEXT = '너는 이스타항공(ZE) 전문 승무원 근무표 파서다. 아래 규칙에 맞춰 YYYY-MM-DD | 구분 | 편명 | 일정/노선 | Show-up 형식으로만 출력할 것.\n\n' +
+      '1. 날짜(YYYY-MM-DD), 오늘부터의 일정만 대상\n' +
+      '2. 구분: 비행, DH, 휴무(PV 포함), 교육, 기타 중 하나\n' +
+      '3. 편명: ZE 편명인 경우 숫자만 또는 ZE포함 기입 (예: 861 또는 ZE861), 없으면 빈칸\n' +
+      '4. 일정/노선: ICN-NRT 등 노선 또는 체류 메모 기입\n' +
+      '5. Show-up: 출근 시각 (HH:MM) 또는 없으면 -';
 
     var now = new Date();
     var currentYearMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
@@ -478,6 +501,7 @@
     var selectedMin = '00';
     var isNoShowUp = false;
     var isPakageMode = false;
+    var isLayoverMode = false;
     var editingColorType = null;
 
     var COLOR_PALETTE = [
@@ -487,7 +511,7 @@
       '#4338ca', '#6d28d9', '#be185d', '#991b1b', '#9a3412', '#78350f', '#713f12', '#365314', '#065f46', '#155e75'
     ];
 
-    var defaultColors = { '비행': '#2563eb', 'DH': '#c026d3', '휴무': '#16a34a', '교육': '#d97706', '기타': '#64748b', 'Pakage': '#8b5cf6' };
+    var defaultColors = { '비행': '#2563eb', 'DH': '#c026d3', '휴무': '#16a34a', '교육': '#d97706', '기타': '#64748b', 'Pakage': '#8b5cf6', 'Layover': '#ec4899' };
     var customColors = {};
     try { customColors = JSON.parse(localStorage.getItem(STORAGE_COLORS) || '{}'); } catch(e) { customColors = {}; }
 
@@ -522,6 +546,13 @@
       css += 'tr.pkg-row { background-color: ' + hexToRgba(pkgCol, 0.16) + ' !important; }\n';
       var pkgIcon = document.querySelector('#legend-Pakage i');
       if (pkgIcon) pkgIcon.style.background = pkgCol;
+
+      var layCol = getColor('Layover');
+      css += ':root { --layover-border: ' + layCol + ' !important; }\n';
+      css += 'tr.layover-row { background-color: ' + hexToRgba(layCol, 0.16) + ' !important; }\n';
+      var layIcon = document.querySelector('#legend-Layover i');
+      if (layIcon) layIcon.style.background = layCol;
+
       styleEl.innerHTML = css;
     }
 
@@ -549,7 +580,6 @@
     function getCutoffTimestamp() {
       var t = new Date();
       t.setHours(0, 0, 0, 0);
-      t.setDate(t.getDate() - 2);
       return t.getTime();
     }
 
@@ -575,10 +605,12 @@
         var curDate = keys[i], prevDate = keys[i - 1];
         if (getDateOffsetStr(prevDate, 1) === curDate) {
           var curEnt = rosterData[curDate], prevEnt = rosterData[prevDate];
-          if (curEnt && prevEnt && curEnt.schedule && prevEnt.schedule) {
-            var curM = curEnt.schedule.match(/(ZE\d+)/i), prevM = prevEnt.schedule.match(/(ZE\d+)/i);
-            if (curM && prevM && curM[1].toUpperCase() === prevM[1].toUpperCase() && !curEnt.schedule.includes('체류')) {
-              curEnt.schedule = curM[1].toUpperCase() + ' (체류)';
+          if (curEnt && prevEnt && curEnt.flight && prevEnt.flight) {
+            var curM = curEnt.flight.match(/(ZE\d+)/i), prevM = prevEnt.flight.match(/(ZE\d+)/i);
+            if (curM && prevM && curM[1].toUpperCase() === prevM[1].toUpperCase()) {
+              if (!curEnt.schedule || (!curEnt.schedule.includes('체류') && !curEnt.schedule.includes('LAYOVER'))) {
+                curEnt.schedule = (curEnt.schedule ? curEnt.schedule + ' ' : '') + '(체류)';
+              }
             }
           }
         }
@@ -624,28 +656,44 @@
           if (!rosterData[getDateOffsetStr(dateStr, -1)]?.isPakage) classes.push('pkg-start');
           if (!rosterData[getDateOffsetStr(dateStr, 1)]?.isPakage) classes.push('pkg-end');
         }
+
+        var isLay = !!(entry && entry.isLayover);
+        if (isLay) {
+          classes.push('layover-row');
+          if (!rosterData[getDateOffsetStr(dateStr, -1)]?.isLayover) classes.push('layover-start');
+          if (!rosterData[getDateOffsetStr(dateStr, 1)]?.isLayover) classes.push('layover-end');
+        }
+
         if (classes.length) tr.className = classes.join(' ');
 
         var dayClass = dayIdx === 0 ? 'sun' : (dayIdx === 6 ? 'sat' : '');
         var badgeHtml = entry?.type ? '<span class="badge ' + entry.type + '">' + entry.type + '</span>' : '<span class="badge empty">-</span>';
-        var scheduleText = entry?.schedule ? escapeHtml(entry.schedule) : '<span style="color:var(--text-sub)">-</span>';
-        var pkgTagHtml = isPkg ? '<span class="pkg-tag">PKG</span>' : '';
+        
+        var flightText = entry?.flight ? escapeHtml(entry.flight) : '';
+        var scheduleText = entry?.schedule ? escapeHtml(entry.schedule) : '';
+        var combinedText = (flightText && scheduleText) ? (flightText + ' ' + scheduleText) : (flightText || scheduleText);
+        var displayedContent = combinedText ? combinedText : '<span style="color:var(--text-sub)">-</span>';
+
+        var tagHtml = '';
+        if (isPkg) tagHtml += '<span class="pkg-tag">PKG</span>';
+        if (isLay) tagHtml += '<span class="layover-tag">NS</span>';
+
         var showUpHtml = (entry?.showUp && entry.showUp !== '-') ? escapeHtml(entry.showUp.replace(':', ' : ')) : '<span style="color:var(--text-sub)">-</span>';
 
         tr.innerHTML =
           '<td class="' + dayClass + '">' + dd + (isToday ? '<div style="font-size:7px; color:var(--today-accent); line-height:1; font-weight:800; margin-top:1px;">TODAY</div>' : '') + '</td>' +
           '<td class="' + dayClass + '">' + dayName + '</td>' +
           '<td class="cell-type">' + badgeHtml + '</td>' +
-          '<td class="cell-edit">' + pkgTagHtml + scheduleText + '</td>' +
+          '<td class="cell-edit">' + tagHtml + displayedContent + '</td>' +
           '<td class="cell-edit">' + showUpHtml + '</td>' +
           '<td class="cell-oju">' + (hasOju ? '🧪' : '<span style="color:var(--border);">·</span>') + '</td>';
 
         (function (targetDate) {
           tr.querySelector('.cell-type').onclick = function (e) {
             e.stopPropagation();
-            if (isPakageMode) return;
+            if (isPakageMode || isLayoverMode) return;
             if (!rosterData[targetDate]) {
-              rosterData[targetDate] = { type: TYPES_ORDER[0], schedule: '', showUp: '-', isPakage: false };
+              rosterData[targetDate] = { type: TYPES_ORDER[0], flight: '', schedule: '', showUp: '-', isPakage: false, isLayover: false };
             } else {
               var idx = TYPES_ORDER.indexOf(rosterData[targetDate].type);
               rosterData[targetDate].type = TYPES_ORDER[(idx + 1) % TYPES_ORDER.length];
@@ -655,7 +703,7 @@
 
           tr.querySelector('.cell-oju').onclick = function (e) {
             e.stopPropagation();
-            if (isPakageMode) return;
+            if (isPakageMode || isLayoverMode) return;
             if (ojuData[targetDate]) delete ojuData[targetDate];
             else ojuData[targetDate] = true;
             saveAll();
@@ -663,8 +711,12 @@
 
           tr.onclick = function () {
             if (isPakageMode) {
-              if (!rosterData[targetDate]) rosterData[targetDate] = { type: '비행', schedule: '', showUp: '-', isPakage: true };
+              if (!rosterData[targetDate]) rosterData[targetDate] = { type: '비행', flight: '', schedule: '', showUp: '-', isPakage: true, isLayover: false };
               else rosterData[targetDate].isPakage = !rosterData[targetDate].isPakage;
+              saveAll();
+            } else if (isLayoverMode) {
+              if (!rosterData[targetDate]) rosterData[targetDate] = { type: '비행', flight: '', schedule: '', showUp: '-', isPakage: false, isLayover: true };
+              else rosterData[targetDate].isLayover = !rosterData[targetDate].isLayover;
               saveAll();
             } else {
               openEditModal(targetDate);
@@ -723,11 +775,15 @@
 
     function openEditModal(dateStr) {
       editingDateStr = dateStr;
-      var cur = rosterData[dateStr] || { type: '비행', schedule: '', showUp: '-', isPakage: false };
+      var cur = rosterData[dateStr] || { type: '비행', flight: '', schedule: '', showUp: '-', isPakage: false, isLayover: false };
       var parts = dateStr.split('-');
       document.getElementById('modal-date-title').textContent = Number(parts[1]) + '월 ' + Number(parts[2]) + '일 일정 편집';
       document.getElementById('modal-pkg-checkbox').checked = !!cur.isPakage;
+      document.getElementById('modal-layover-checkbox').checked = !!cur.isLayover;
+      
+      document.getElementById('modal-flight-input').value = cur.flight || '';
       document.getElementById('modal-schedule-input').value = cur.schedule || '';
+
       openModal('edit-dialog');
       setTimeout(function () { setWheelTime(cur.showUp); }, 30);
     }
@@ -758,7 +814,7 @@
     window.addEventListener('DOMContentLoaded', function () {
       initWheelPicker();
 
-      var legendItems = ['비행', 'DH', '휴무', '교육', '기타', 'Pakage'];
+      var legendItems = ['비행', 'DH', '휴무', '교육', '기타', 'Pakage', 'Layover'];
       for (var l = 0; l < legendItems.length; l++) {
         (function(t) {
           var el = document.getElementById('legend-' + t);
@@ -777,19 +833,37 @@
         var tb = document.getElementById('edit-toolbar');
         tb.classList.toggle('show');
         this.textContent = tb.classList.contains('show') ? '편집 닫기' : '편집';
-        if (!tb.classList.contains('show') && isPakageMode) {
+        if (!tb.classList.contains('show')) {
           isPakageMode = false;
-          document.body.classList.remove('pkg-mode-active');
-          document.getElementById('btn-toggle-pkg-mode').classList.remove('active-mode');
-          document.getElementById('btn-toggle-pkg-mode').textContent = '📦 Pakage 모드';
+          isLayoverMode = false;
+          document.body.classList.remove('pkg-mode-active', 'layover-mode-active');
+          var btnP = document.getElementById('btn-toggle-pkg-mode');
+          var btnL = document.getElementById('btn-toggle-layover-mode');
+          btnP.classList.remove('active-mode'); btnP.textContent = '📦 Pakage 모드';
+          btnL.classList.remove('active-layover-mode'); btnL.textContent = '✈️ Layover 모드';
         }
       };
 
       document.getElementById('btn-toggle-pkg-mode').onclick = function () {
         isPakageMode = !isPakageMode;
+        isLayoverMode = false;
         document.body.classList.toggle('pkg-mode-active', isPakageMode);
+        document.body.classList.remove('layover-mode-active');
         this.classList.toggle('active-mode', isPakageMode);
         this.textContent = isPakageMode ? '📦 Pakage 모드 ON' : '📦 Pakage 모드';
+        var btnL = document.getElementById('btn-toggle-layover-mode');
+        btnL.classList.remove('active-layover-mode'); btnL.textContent = '✈️ Layover 모드';
+      };
+
+      document.getElementById('btn-toggle-layover-mode').onclick = function () {
+        isLayoverMode = !isLayoverMode;
+        isPakageMode = false;
+        document.body.classList.toggle('layover-mode-active', isLayoverMode);
+        document.body.classList.remove('pkg-mode-active');
+        this.classList.toggle('active-layover-mode', isLayoverMode);
+        this.textContent = isLayoverMode ? '✈️ Layover 모드 ON' : '✈️ Layover 모드';
+        var btnP = document.getElementById('btn-toggle-pkg-mode');
+        btnP.classList.remove('active-mode'); btnP.textContent = '📦 Pakage 모드';
       };
 
       var closes = document.querySelectorAll('[data-close]');
@@ -805,15 +879,26 @@
       document.getElementById('modal-btn-save').onclick = function () {
         if (!editingDateStr) return;
         var exType = rosterData[editingDateStr]?.type || '비행';
-        var sched = document.getElementById('modal-schedule-input').value.trim();
+        var flightInput = document.getElementById('modal-flight-input').value.trim();
+        var scheduleVal = document.getElementById('modal-schedule-input').value.trim();
         var isPkg = document.getElementById('modal-pkg-checkbox').checked;
+        var isLay = document.getElementById('modal-layover-checkbox').checked;
         var showUp = isNoShowUp ? '-' : (selectedHour + ':' + selectedMin);
 
+        var finalFlight = flightInput;
+        if (finalFlight && /^\d+$/.test(finalFlight)) {
+          finalFlight = 'ZE' + finalFlight;
+        } else if (finalFlight) {
+          finalFlight = finalFlight.toUpperCase();
+        }
+
         rosterData[editingDateStr] = {
-          type: (sched.toUpperCase().includes('PV')) ? '휴무' : exType,
-          schedule: sched,
+          type: (scheduleVal.toUpperCase().includes('PV')) ? '휴무' : exType,
+          flight: finalFlight,
+          schedule: scheduleVal,
           showUp: showUp,
-          isPakage: isPkg
+          isPakage: isPkg,
+          isLayover: isLay
         };
         saveAll();
         closeModal('edit-dialog');
@@ -846,9 +931,11 @@
             if (rType.toUpperCase().includes('PV') || sched.toUpperCase().includes('PV')) rType = '휴무';
             rosterData[p[0]] = {
               type: TYPES_ORDER.includes(rType) ? rType : '비행',
+              flight: '',
               schedule: sched,
               showUp: p[3] || '-',
-              isPakage: false
+              isPakage: false,
+              isLayover: false
             };
             cnt++;
           }
