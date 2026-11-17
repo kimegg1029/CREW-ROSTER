@@ -72,6 +72,7 @@
       margin: 0 auto;
       padding: 16px 14px;
       min-height: 100vh;
+      touch-action: pan-y;
     }
 
     header { text-align: center; margin-bottom: 16px; }
@@ -407,7 +408,6 @@
         <input type="checkbox" id="modal-layover-checkbox" style="accent-color:var(--layover-border);" />
       </label>
 
-      <!-- 다시 하나로 합쳐진 편명 / 일정 통합 입력 칸 -->
       <label class="field-label">편명 / 일정 (숫자만 입력 시 ZE 자동 부착)</label>
       <input type="text" id="modal-schedule-input" placeholder="예: 861 ICN-NRT" />
 
@@ -613,7 +613,7 @@
       applyCustomStyles();
       var parts = currentYearMonth.split('-');
       var year = Number(parts[0]), month = Number(parts[1]);
-      document.getElementById('current-month-label').textContent = month + '월';
+      document.getElementById('current-month-label').textContent = year + '년 ' + month + '월';
 
       var lastDay = new Date(year, month, 0).getDate();
       var tbody = document.getElementById('roster-tbody');
@@ -715,6 +715,44 @@
       }
     }
 
+    function initSwipeGesture() {
+      var container = document.getElementById('swipe-container');
+      var startX = 0;
+      var startY = 0;
+
+      container.addEventListener('touchstart', function(e) {
+        startX = e.changedTouches[0].screenX;
+        startY = e.changedTouches[0].screenY;
+      }, { passive: true });
+
+      container.addEventListener('touchend', function(e) {
+        var endX = e.changedTouches[0].screenX;
+        var endY = e.changedTouches[0].screenY;
+        var diffX = endX - startX;
+        var diffY = endY - startY;
+
+        // 수평 스와이프 거리가 65px 이상이고 수직 움직임보다 클 때 동작
+        if (Math.abs(diffX) > 65 && Math.abs(diffX) > Math.abs(diffY)) {
+          var parts = currentYearMonth.split('-');
+          var year = Number(parts[0]);
+          var month = Number(parts[1]);
+
+          if (diffX > 0) {
+            // 오른쪽으로 스와이프 -> 전월 이동
+            month--;
+            if (month < 1) { month = 12; year--; }
+          } else {
+            // 왼쪽으로 스와이프 -> 익월 이동
+            month++;
+            if (month > 12) { month = 1; year++; }
+          }
+
+          currentYearMonth = year + '-' + String(month).padStart(2, '0');
+          renderTable();
+        }
+      }, { passive: true });
+    }
+
     function initWheelPicker() {
       var hourCol = document.getElementById('wheel-hour'), minCol = document.getElementById('wheel-min');
       var hHtml = '<div class="wheel-spacer"></div>';
@@ -768,7 +806,6 @@
       document.getElementById('modal-pkg-checkbox').checked = !!cur.isPakage;
       document.getElementById('modal-layover-checkbox').checked = !!cur.isLayover;
       
-      // 입력칸에 기본 '-'가 뜨지 않도록 빈 문자열 처리
       document.getElementById('modal-schedule-input').value = (cur.schedule === '-' ? '' : (cur.schedule || ''));
 
       openModal('edit-dialog');
@@ -800,6 +837,7 @@
 
     window.addEventListener('DOMContentLoaded', function () {
       initWheelPicker();
+      initSwipeGesture();
 
       var legendItems = ['비행', 'DH', '휴무', '교육', '기타', 'Pakage', 'Layover'];
       for (var l = 0; l < legendItems.length; l++) {
@@ -871,7 +909,6 @@
         var isLay = document.getElementById('modal-layover-checkbox').checked;
         var showUp = isNoShowUp ? '-' : (selectedHour + ':' + selectedMin);
 
-        // 첫 단어가 숫자만 입력된 경우 자동으로 ZE 붙이기 처리 (예: "861 ICN-NRT" -> "ZE861 ICN-NRT")
         var finalSched = rawSched;
         if (finalSched) {
           var tokens = finalSched.split(' ');
