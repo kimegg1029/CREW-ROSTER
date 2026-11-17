@@ -6,7 +6,12 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>EASTAR CREW - CREW ROSTER</title>
+  <title>히동 Schedule</title>
+
+  <!-- 스마트폰 홈 화면 및 브라우저 아이콘 설정 (보내주신 사진 적용) -->
+  <link rel="apple-touch-icon" href="icon.jpg">
+  <link rel="icon" type="image/jpeg" href="icon.jpg">
+
   <style>
     /* 라이트 테마 기본 변수 */
     :root {
@@ -371,7 +376,7 @@
 <body>
   <main id="swipe-container">
     <header>
-      <div class="brand-sub">EASTAR CREW</div>
+      <div class="brand-sub">HIDONG SCHEDULE</div>
       <h1>CREW ROSTER</h1>
     </header>
 
@@ -517,11 +522,9 @@
     var isNoShowUp = false;
     var isPakageMode = false;
 
-    // 테마 초기화
     var savedTheme = localStorage.getItem(STORAGE_THEME) || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
 
-    // 하드코딩된 Oju Vial 기본 데이터 설정 (11월, 12월 지정 날짜들)
     var DEFAULT_OJU_DATES = [
       '2026-11-18', '2026-11-19', '2026-11-20', '2026-11-25', '2026-11-26', '2026-11-27', '2026-11-28',
       '2026-12-02', '2026-12-03', '2026-12-04', '2026-12-09', '2026-12-10', '2026-12-11',
@@ -536,7 +539,6 @@
       if (savedO) {
         ojuData = JSON.parse(savedO);
       } else {
-        // 최초 접속 시 하드코딩된 Oju 날짜 자동 세팅
         for (var i = 0; i < DEFAULT_OJU_DATES.length; i++) {
           ojuData[DEFAULT_OJU_DATES[i]] = true;
         }
