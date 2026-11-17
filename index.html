@@ -1,133 +1,379 @@
-// 1. 연, 월, 일 숫자(Timestamp)를 기준으로 15일 전 커트라인 날짜 계산 (시간 오차 원천 차단)
-    function getCutoffTimestamp() {
-      var t = new Date();
-      t.setHours(0, 0, 0, 0);
-      t.setDate(t.getDate() - 15);
-      return t.getTime();
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>EASTAR CREW - CREW ROSTER</title>
+  <style>
+    /* 라이트 테마 기본 변수 */
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-sub: #64748b;
+      --border: #e2e8f0;
+      --brand: #f43f5e;
+
+      --flight-bg: #dbeafe;
+      --flight-badge: #2563eb;
+      --dh-bg: #fae8ff;
+      --dh-badge: #c026d3;
+      --off-bg: #dcfce7;
+      --off-badge: #16a34a;
+      --edu-bg: #fef3c7;
+      --edu-badge: #d97706;
+      --etc-bg: #f1f5f9;
+      --etc-badge: #64748b;
+
+      --pkg-border: #8b5cf6;
+      --today-bg: #fff1f2;
+      --today-accent: #f43f5e;
     }
 
-    // 2. 스토리지 정리 함수에도 강력한 타임스탬프 비교 적용
-    function purgeOldStorage() {
-      var cutoffTime = getCutoffTimestamp();
-      var rKeys = Object.keys(rosterData);
-      for (var i = 0; i < rKeys.length; i++) {
-        var d = new Date(rKeys[i] + 'T00:00:00');
-        if (!isNaN(d.getTime()) && d.getTime() < cutoffTime) {
-          delete rosterData[rKeys[i]];
-        }
-      }
-      var oKeys = Object.keys(ojuData);
-      for (var j = 0; j < oKeys.length; j++) {
-        var od = new Date(oKeys[j] + 'T00:00:00');
-        if (!isNaN(od.getTime()) && od.getTime() < cutoffTime) {
-          delete ojuData[oKeys[j]];
-        }
-      }
-      localStorage.setItem(STORAGE_ROSTER, JSON.stringify(rosterData));
-      localStorage.setItem(STORAGE_OJU, JSON.stringify(ojuData));
+    /* 다크 테마 변수 */
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --text: #f8fafc;
+      --text-sub: #94a3b8;
+      --border: #334155;
+      --brand: #f43f5e;
+
+      --flight-bg: #1e3a8a;
+      --flight-badge: #3b82f6;
+      --dh-bg: #701a75;
+      --dh-badge: #e879f9;
+      --off-bg: #064e3b;
+      --off-badge: #34d399;
+      --edu-bg: #78350f;
+      --edu-badge: #fbbf24;
+      --etc-bg: #334155;
+      --etc-badge: #94a3b8;
+
+      --pkg-border: #a78bfa;
+      --today-bg: #4c0519;
+      --today-accent: #fb7185;
     }
-    purgeOldStorage();
 
-    // 3. 렌더링 루프 안에서도 완벽하게 날짜 비교
-    function renderTable() {
-      var parts = currentYearMonth.split('-');
-      var year = Number(parts[0]);
-      var month = Number(parts[1]);
-
-      document.getElementById('current-month-label').textContent = month + '월';
-
-      var lastDay = new Date(year, month, 0).getDate();
-      var tbody = document.getElementById('roster-tbody');
-      tbody.innerHTML = '';
-
-      var todayStr = getTodayStr();
-      var cutoffTime = getCutoffTimestamp();
-
-      for (var d = 1; d <= lastDay; d++) {
-        var dd = String(d).padStart(2, '0');
-        var dateStr = currentYearMonth + '-' + dd;
-        var rowDateObj = new Date(year, month - 1, d);
-        rowDateObj.setHours(0, 0, 0, 0);
-
-        // 오늘 기준 15일 이전 날짜는 행 자체를 아예 생성하지 않음
-        if (rowDateObj.getTime() < cutoffTime) {
-          continue;
-        }
-
-        var dayIdx = rowDateObj.getDay();
-        var dayName = DAYS_KO[dayIdx];
-        var entry = rosterData[dateStr];
-        var hasOju = !!ojuData[dateStr];
-
-        var tr = document.createElement('tr');
-        var isToday = (dateStr === todayStr);
-        var rowClasses = [];
-
-        if (entry && entry.type) rowClasses.push('type-' + entry.type);
-        if (isToday) rowClasses.push('is-today');
-
-        var isPkg = !!(entry && entry.isPakage);
-        if (isPkg) {
-          rowClasses.push('pkg-row');
-          var prevPkg = !!(rosterData[getDateOffsetStr(dateStr, -1)] && rosterData[getDateOffsetStr(dateStr, -1)].isPakage);
-          var nextPkg = !!(rosterData[getDateOffsetStr(dateStr, 1)] && rosterData[getDateOffsetStr(dateStr, 1)].isPakage);
-          if (!prevPkg) rowClasses.push('pkg-start');
-          if (!nextPkg) rowClasses.push('pkg-end');
-        }
-
-        if (rowClasses.length > 0) tr.className = rowClasses.join(' ');
-
-        var dayClass = dayIdx === 0 ? 'sun' : (dayIdx === 6 ? 'sat' : '');
-
-        var badgeHtml = (entry && entry.type)
-          ? '<span class="badge ' + entry.type + '">' + entry.type + '</span>'
-          : '<span class="badge empty">-</span>';
-
-        var scheduleText = entry && entry.schedule ? escapeHtml(entry.schedule) : '<span style="color:#475569">-</span>';
-        var pkgTagHtml = isPkg ? '<span class="pkg-tag">PKG</span>' : '';
-        var showUpHtml = (entry && entry.showUp && entry.showUp !== '-')
-          ? escapeHtml(entry.showUp.replace(':', ' : '))
-          : '<span style="color:#475569">-</span>';
-
-        var ojuMark = hasOju ? '🧪' : '<span style="color:#334155;">·</span>';
-
-        tr.innerHTML =
-          '<td class="' + dayClass + '">' + dd + (isToday ? '<div style="font-size:8px; color:var(--today-accent); line-height:1;">TODAY</div>' : '') + '</td>' +
-          '<td class="' + dayClass + '">' + dayName + '</td>' +
-          '<td class="cell-type">' + badgeHtml + '</td>' +
-          '<td class="cell-edit">' + pkgTagHtml + scheduleText + '</td>' +
-          '<td class="cell-edit">' + showUpHtml + '</td>' +
-          '<td class="cell-oju">' + ojuMark + '</td>';
-
-        (function (targetDate) {
-          tr.querySelector('.cell-type').onclick = function (e) {
-            e.stopPropagation();
-            if (isPakageMode) return;
-            cycleRowType(targetDate);
-          };
-
-          tr.querySelector('.cell-oju').onclick = function (e) {
-            e.stopPropagation();
-            if (isPakageMode) return;
-            if (ojuData[targetDate]) delete ojuData[targetDate];
-            else ojuData[targetDate] = true;
-            saveAll();
-          };
-
-          tr.onclick = function () {
-            if (isPakageMode) {
-              if (!rosterData[targetDate]) {
-                rosterData[targetDate] = { type: '비행', schedule: '', showUp: '-', isPakage: true };
-              } else {
-                rosterData[targetDate].isPakage = !rosterData[targetDate].isPakage;
-              }
-              saveAll();
-            } else {
-              openEditModal(targetDate);
-            }
-          };
-        })(dateStr);
-
-        tbody.appendChild(tr);
-      }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding-bottom: 36px;
+      -webkit-font-smoothing: antialiased;
+      transition: background 0.2s, color 0.2s;
     }
+
+    main {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 14px 12px;
+      min-height: 100vh;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .brand-sub {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: var(--brand);
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+
+    .month-bar {
+      background: var(--surface);
+      padding: 14px 16px;
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      margin-bottom: 12px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+    .month-title {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    .table-card {
+      background: var(--surface);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border: 1px solid var(--border);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      table-layout: fixed;
+    }
+    thead {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      color: var(--text-sub);
+      font-size: 11px;
+    }
+    th, td {
+      padding: 10px 4px;
+      text-align: center;
+      vertical-align: middle;
+      border-bottom: 1px solid var(--border);
+      word-break: keep-all;
+    }
+
+    th:nth-child(1), td:nth-child(1) { width: 44px; font-weight: 700; }
+    th:nth-child(2), td:nth-child(2) { width: 36px; }
+    th:nth-child(3), td:nth-child(3) { width: 70px; cursor: pointer; }
+    th:nth-child(4), td:nth-child(4) { width: auto; }
+    th:nth-child(5), td:nth-child(5) { width: 64px; white-space: nowrap; font-weight: 600; font-variant-numeric: tabular-nums; }
+    th:nth-child(6), td:nth-child(6) { width: 48px; white-space: nowrap; cursor: pointer; }
+
+    tr.type-비행 { background-color: var(--flight-bg); }
+    tr.type-DH { background-color: var(--dh-bg); }
+    tr.type-휴무 { background-color: var(--off-bg); }
+    tr.type-교육 { background-color: var(--edu-bg); }
+    tr.type-기타 { background-color: var(--etc-bg); }
+
+    tr.is-today {
+      background-color: var(--today-bg) !important;
+      box-shadow: inset 3px 0 0 var(--today-accent), inset -3px 0 0 var(--today-accent);
+    }
+    tr.is-today td:first-child { color: var(--today-accent); }
+
+    tr.pkg-row td:first-child { border-left: 3px solid var(--pkg-border); }
+    tr.pkg-row td:last-child { border-right: 3px solid var(--pkg-border); }
+    tr.pkg-start td { border-top: 2.5px solid var(--pkg-border); }
+    tr.pkg-end td { border-bottom: 2.5px solid var(--pkg-border); }
+
+    body.pkg-mode-active tbody tr { cursor: pointer; }
+    body.pkg-mode-active tbody tr:hover { opacity: 0.8; }
+
+    .sun { color: #ef4444; }
+    .sat { color: #3b82f6; }
+    [data-theme="dark"] .sun { color: #f87171; }
+    [data-theme="dark"] .sat { color: #60a5fa; }
+
+    .badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 6px;
+      border-radius: 5px;
+      color: #fff;
+      line-height: 1.1;
+      user-select: none;
+    }
+    .badge.비행 { background: var(--flight-badge); }
+    .badge.DH { background: var(--dh-badge); }
+    .badge.휴무 { background: var(--off-badge); }
+    .badge.교육 { background: var(--edu-badge); color: #1e293b; }
+    .badge.기타 { background: var(--etc-badge); color: var(--text); }
+    .badge.empty { background: var(--border); color: var(--text-sub); }
+
+    .pkg-tag {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--pkg-border);
+      border: 1px solid var(--pkg-border);
+      border-radius: 4px;
+      padding: 0 3px;
+      margin-right: 3px;
+      vertical-align: middle;
+    }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+    .legend span { display: flex; align-items: center; gap: 4px; }
+    .legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+    .bottom-controls {
+      margin-top: 16px;
+      text-align: center;
+    }
+    .edit-toolbar {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 10px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      gap: 6px;
+      flex-wrap: wrap;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .edit-toolbar.show { display: flex; }
+
+    button {
+      font-family: inherit;
+      border: none;
+      border-radius: 9px;
+      cursor: pointer;
+      font-weight: 650;
+      padding: 10px 14px;
+      font-size: 12.5px;
+    }
+    button:active { opacity: 0.75; transform: scale(0.98); }
+    .btn-primary { background: var(--brand); color: #fff; }
+    .btn-secondary { background: var(--border); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary.active-mode { background: #7c3aed; color: #fff; border-color: #a78bfa; }
+    .btn-full { width: 100%; padding: 12px; font-size: 14px; }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-box {
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 22px 22px 0 0;
+      padding: 22px 20px calc(22px + env(safe-area-inset-bottom));
+      width: 100%;
+      max-width: 560px;
+      max-height: 88vh;
+      overflow-y: auto;
+      box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
+      border: 1px solid var(--border);
+      animation: slideUp 0.22s ease-out;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .dialog-header h2 { font-size: 17px; font-weight: 800; }
+    .dialog-desc { font-size: 12px; color: var(--text-sub); line-height: 1.45; margin-bottom: 12px; }
+
+    .field-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-sub);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 12px;
+      font-size: 13.5px;
+      font-family: inherit;
+      margin-bottom: 14px;
+      background: var(--bg);
+      color: var(--text);
+    }
+    textarea { min-height: 140px; line-height: 1.5; resize: vertical; }
+
+    .pkg-toggle-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg);
+      border: 1px solid var(--pkg-border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      cursor: pointer;
+    }
+    .pkg-toggle-card span {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--pkg-border);
+    }
+    .pkg-toggle-card input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--pkg-border);
+    }
+
+    .wheel-picker-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px;
+      margin-bottom: 14px;
+      position: relative;
+    }
+    .wheel-col {
+      width: 72px;
+      height: 114px;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      text-align: center;
+      scrollbar-width: none;
+    }
+    .wheel-col::-webkit-scrollbar { display: none; }
+    .wheel-item {
+      height: 38px;
+      line-height: 38px;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-sub);
+      scroll-snap-align: center;
+      cursor: pointer;
+    }
+    .wheel-item.selected {
+      color: var(--brand);
+      font-size: 18px;
+    }
+    .wheel-spacer { height: 38px; }
+    .wheel-highlight {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      top: 46px;
+      height: 38px;
+      border-top: 1.5px solid var(--border);
+      border-bottom: 1.5px solid var(--border);
+      pointer-events: none;
+    }
+
+    .dialog-footer { display: flex; gap: 8px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <main id="swipe-container">
+    <header>
+      <div class="brand-sub">EASTAR CREW</div>
+      <h1>CREW ROSTER</h1>
+    </header>
+
+    <section class="month-bar">
+      <div class="month-title" id="current-month-label">11월</div>
