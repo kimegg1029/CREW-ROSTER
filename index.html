@@ -571,7 +571,7 @@
     var customColors = {};
     try { customColors = JSON.parse(localStorage.getItem(STORAGE_COLORS) || '{}'); } catch(e) { customColors = {}; }
 
-    function getColor(type) { return customColors[type] || defaultColors[type] || '#2563eb'; }
+    function getColor(type) { var value = customColors && customColors[type]; return (typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value)) ? value : (defaultColors[type] || '#2563eb'); }
 
     function hexToRgba(hex, alpha) {
       var c = hex.replace('#','');
