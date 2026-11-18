@@ -1236,5 +1236,19 @@
       };
     });
   </script>
+  <script>
+    // 홈 화면 앱을 열 때마다 최신 서비스 워커를 확인합니다.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+          .then(function (registration) {
+            registration.update().catch(function () {});
+          })
+          .catch(function (error) {
+            console.warn('앱 업데이트 확인 실패:', error);
+          });
+      });
+    }
+  </script>
 </body>
 </html>
