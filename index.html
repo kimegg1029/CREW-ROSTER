@@ -174,41 +174,27 @@
     .badge.기타 { background: var(--etc-badge); color: var(--text); }
     .badge.empty { background: var(--border); color: var(--text-sub); box-shadow: none; }
 
-    .tag-area {
-      display: inline-flex;
-      align-items: center;
-      width: 58px;
-      min-width: 58px;
+    .pkg-tag {
+      display: inline-block;
+      font-size: 8.5px;
+      font-weight: 800;
+      color: var(--pkg-border);
+      border: 1px solid var(--pkg-border);
+      border-radius: 3px;
+      padding: 0 2px;
+      margin-right: 2px;
       vertical-align: middle;
     }
-    .tag-slot {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 29px;
-      min-width: 29px;
-      height: 15px;
-      box-sizing: border-box;
-    }
-    .pkg-tag,
+
     .layover-tag {
       display: inline-block;
       font-size: 8.5px;
       font-weight: 800;
-      border-radius: 3px;
-      padding: 0 2px;
-      line-height: 12px;
-      white-space: nowrap;
-    }
-    .pkg-tag {
-      color: var(--pkg-border);
-      border: 1px solid var(--pkg-border);
-    }
-    .layover-tag {
       color: var(--layover-border);
       border: 1px solid var(--layover-border);
-    }
-    .schedule-text {
+      border-radius: 3px;
+      padding: 0 2px;
+      margin-right: 2px;
       vertical-align: middle;
     }
 
@@ -777,11 +763,9 @@
         var badgeHtml = safeType ? '<span class="badge ' + safeType + '">' + escapeHtml(safeType) + '</span>' : '<span class="badge empty">-</span>';
         var scheduleText = entry?.schedule ? escapeHtml(entry.schedule) : '<span style="color:var(--text-sub)">-</span>';
         
-        var tagHtml =
-          '<span class="tag-area">' +
-            '<span class="tag-slot">' + (isPkg ? '<span class="pkg-tag">PKG</span>' : '') + '</span>' +
-            '<span class="tag-slot">' + (isLay ? '<span class="layover-tag">NS</span>' : '') + '</span>' +
-          '</span>';
+        var tagHtml = '';
+        if (isPkg) tagHtml += '<span class="pkg-tag">PKG</span>';
+        if (isLay) tagHtml += '<span class="layover-tag">NS</span>';
 
         var showUpHtml = (entry?.showUp && entry.showUp !== '-') ? escapeHtml(entry.showUp.replace(':', ' : ')) : '<span style="color:var(--text-sub)">-</span>';
 
@@ -789,7 +773,7 @@
           '<td class="' + dayClass + '">' + dd + (isToday ? '<div style="font-size:7px; color:var(--today-accent); line-height:1; font-weight:800; margin-top:1px;">TODAY</div>' : '') + '</td>' +
           '<td class="' + dayClass + '">' + dayName + '</td>' +
           '<td class="cell-type">' + badgeHtml + '</td>' +
-          '<td class="cell-edit">' + tagHtml + '<span class="schedule-text">' + scheduleText + '</span></td>' +
+          '<td class="cell-edit">' + tagHtml + scheduleText + '</td>' +
           '<td class="cell-edit">' + showUpHtml + '</td>' +
           '<td class="cell-oju">' + (hasOju ? '❤️' : '<span style="color:var(--border);">·</span>') + '</td>';
 
