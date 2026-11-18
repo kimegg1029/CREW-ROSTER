@@ -1,15 +1,16 @@
-const CACHE_NAME = "crew-roster-shell-v5";
+const CACHE_NAME = "crew-roster-shell-v6";
 const APP_FILES = ["./", "./index.html", "./manifest.json"];
 
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     await Promise.all(APP_FILES.map(async file => {
+      const url = new URL(file, self.registration.scope).href;
       try {
-        const response = await fetch(file, { cache: "no-store" });
-        if (response.ok) await cache.put(file, response);
+        const response = await fetch(url, { cache: "reload" });
+        if (response && response.ok) await cache.put(url, response);
       } catch (error) {
-        // 설치 중 네트워크가 불안정해도 서비스 워커 설치는 계속합니다.
+        // 오프라인 상태에서는 캐시 가능한 파일만 사용합니다.
       }
     }));
     await self.skipWaiting();
@@ -44,7 +45,6 @@ self.addEventListener("fetch", event => {
     url.pathname.endsWith(".json");
 
   if (isAppCode) {
-    // 앱 화면과 코드 파일은 항상 최신 서버 응답을 먼저 사용합니다.
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
       try {
@@ -58,7 +58,9 @@ self.addEventListener("fetch", event => {
         if (cached) return cached;
 
         if (isNavigation) {
-          const fallback = await cache.match("./index.html") || await cache.match("./");
+          const base = self.registration.scope;
+          const fallback = await cache.match(new URL("index.html", base).href) ||
+                           await cache.match(new URL("./", base).href);
           if (fallback) return fallback;
         }
         throw error;
@@ -67,7 +69,6 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // 이미지 등 정적 파일은 캐시 우선으로 처리해 오프라인 사용을 지원합니다.
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
     const cached = await cache.match(request);
