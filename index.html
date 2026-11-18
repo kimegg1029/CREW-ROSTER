@@ -1,1099 +1,498 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>히동 Schedule</title>
-
-  <link rel="apple-touch-icon" href="icon.png">
-  <link rel="icon" type="image/png" href="icon.png">
-
   <style>
     :root {
-      --bg: #f8fafc;
-      --surface: #ffffff;
-      --text: #0f172a;
-      --text-sub: #64748b;
-      --border: #e2e8f0;
-      --brand: #f43f5e;
-      --flight-bg: #dbeafe;
-      --flight-badge: #2563eb;
-      --dh-bg: #fae8ff;
-      --dh-badge: #c026d3;
-      --off-bg: #dcfce7;
-      --off-badge: #16a34a;
-      --edu-bg: #fef3c7;
-      --edu-badge: #d97706;
-      --etc-bg: #f1f5f9;
-      --etc-badge: #64748b;
-      --pkg-border: #8b5cf6;
-      --layover-border: #ec4899;
-      --today-bg: #fff1f2;
-      --today-accent: #f43f5e;
+      --primary-color: #4a90e2;
+      --bg-color: #f8f9fa;
+      --card-bg: #ffffff;
+      --text-main: #333333;
+      --text-sub: #666666;
+      --border-color: #e2e8f0;
+      --danger-color: #d93025;
     }
 
-    [data-theme="dark"] {
-      --bg: #0b0f19;
-      --surface: #151c2c;
-      --text: #f8fafc;
-      --text-sub: #94a3b8;
-      --border: #273349;
-      --brand: #fb7185;
-      --flight-bg: #1e3a8a;
-      --flight-badge: #3b82f6;
-      --dh-bg: #701a75;
-      --dh-badge: #e879f9;
-      --off-bg: #064e3b;
-      --off-badge: #34d399;
-      --edu-bg: #78350f;
-      --edu-badge: #fbbf24;
-      --etc-bg: #222d42;
-      --etc-badge: #94a3b8;
-      --pkg-border: #a78bfa;
-      --layover-border: #f472b6;
-      --today-bg: #3c121a;
-      --today-accent: #fb7185;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      padding-bottom: 40px;
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
-    }
-
-    main {
-      max-width: 560px;
-      margin: 0 auto;
-      padding: 16px 14px;
-      min-height: 100vh;
-      touch-action: pan-y;
-    }
-
-    /* 스와이프 모션 대상 영역 */
-    .swipe-stage {
-      will-change: transform, opacity;
-      transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.24s ease;
-    }
-    .swipe-stage.is-dragging {
-      transition: none;
-    }
-
-    header { text-align: center; margin-bottom: 16px; }
-    .brand-sub { font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--brand); margin-bottom: 2px; }
-    h1 { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; }
-
-    .month-bar {
-      background: var(--surface);
-      padding: 14px 18px;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-      margin-bottom: 14px;
-      text-align: center;
-      border: 1px solid var(--border);
-    }
-    .month-title { font-size: 19px; font-weight: 800; }
-
-    .table-card {
-      background: var(--surface);
-      border-radius: 18px;
-      overflow: hidden;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.06);
-      border: 1px solid var(--border);
-    }
-    table { width: 100%; border-collapse: collapse; font-size: 11.5px; table-layout: fixed; }
-    thead { background: var(--surface); border-bottom: 1px solid var(--border); color: var(--text-sub); font-size: 10.5px; }
-    th, td {
-      padding: 11px 2px;
-      text-align: center;
-      vertical-align: middle;
-      border-bottom: 1px solid var(--border);
-      word-break: keep-all;
-      white-space: nowrap;
-      overflow: hidden;
-    }
-
-    th:nth-child(1), td:nth-child(1) { width: 34px; font-weight: 700; }
-    th:nth-child(2), td:nth-child(2) { width: 28px; }
-    th:nth-child(3), td:nth-child(3) { width: 54px; cursor: pointer; }
-    th:nth-child(4), td:nth-child(4) { width: auto; white-space: normal; }
-    th:nth-child(5), td:nth-child(5) { width: 58px; font-weight: 600; font-variant-numeric: tabular-nums; }
-    th:nth-child(6), td:nth-child(6) { width: 36px; cursor: pointer; }
-
-    tr.type-비행 { background-color: var(--flight-bg); }
-    tr.type-DH { background-color: var(--dh-bg); }
-    tr.type-휴무 { background-color: var(--off-bg); }
-    tr.type-교육 { background-color: var(--edu-bg); }
-    tr.type-기타 { background-color: var(--etc-bg); }
-    tr.pkg-row { background-color: var(--pkg-row-bg, rgba(139, 92, 246, 0.12)) !important; }
-    tr.layover-row { background-color: var(--layover-row-bg, rgba(236, 72, 153, 0.12)) !important; }
-
-    tr.is-today { background-color: var(--today-bg) !important; }
-    tr.is-today td:first-child { color: var(--today-accent); font-weight: 800; }
-
-    tr.pkg-row td:first-child { border-left: 3px solid var(--pkg-border); }
-    tr.pkg-row td:last-child { border-right: 3px solid var(--pkg-border); }
-    tr.pkg-start td { border-top: 2.5px solid var(--pkg-border); }
-    tr.pkg-end td { border-bottom: 2.5px solid var(--pkg-border); }
-
-    tr.layover-row td:first-child { border-left: 3px solid var(--layover-border); }
-    tr.layover-row td:last-child { border-right: 3px solid var(--layover-border); }
-    tr.layover-start td { border-top: 2.5px solid var(--layover-border); }
-    tr.layover-end td { border-bottom: 2.5px solid var(--layover-border); }
-
-    body.pkg-mode-active tbody tr, body.layover-mode-active tbody tr { cursor: pointer; }
-    body.pkg-mode-active tbody tr:hover, body.layover-mode-active tbody tr:hover { opacity: 0.8; }
-
-    .sun { color: #f43f5e; }
-    .sat { color: #3b82f6; }
-    [data-theme="dark"] .sun { color: #fb7185; }
-    [data-theme="dark"] .sat { color: #60a5fa; }
-
-    .badge {
-      display: inline-block;
-      font-size: 9.5px;
-      font-weight: 700;
-      padding: 3px 5px;
-      border-radius: 5px;
-      color: #fff;
-      line-height: 1.1;
-      width: 100%;
-      text-align: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
-    }
-    .badge.비행 { background: var(--flight-badge); }
-    .badge.DH { background: var(--dh-badge); }
-    .badge.휴무 { background: var(--off-badge); }
-    .badge.교육 { background: var(--edu-badge); color: #1e293b; }
-    .badge.기타 { background: var(--etc-badge); color: var(--text); }
-    .badge.empty { background: var(--border); color: var(--text-sub); box-shadow: none; }
-
-    .pkg-tag {
-      display: inline-block;
-      font-size: 8.5px;
-      font-weight: 800;
-      color: var(--pkg-border);
-      border: 1px solid var(--pkg-border);
-      border-radius: 3px;
-      padding: 0 2px;
-      margin-right: 2px;
-      vertical-align: middle;
-    }
-
-    .layover-tag {
-      display: inline-block;
-      font-size: 8.5px;
-      font-weight: 800;
-      color: var(--layover-border);
-      border: 1px solid var(--layover-border);
-      border-radius: 3px;
-      padding: 0 2px;
-      margin-right: 2px;
-      vertical-align: middle;
-    }
-
-    .legend {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 16px;
       display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 14px;
-      font-size: 11px;
-      color: var(--text-sub);
-    }
-    .legend span {
-      display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 5px;
-      cursor: pointer;
-      padding: 5px 8px;
-      border-radius: 8px;
-      background: var(--surface);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+      min-height: 100vh;
     }
-    .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 
-    .bottom-controls { margin-top: 18px; text-align: center; }
-    .edit-toolbar {
-      display: none;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 12px;
+    .container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
       border-radius: 16px;
-      margin-bottom: 10px;
-      gap: 8px;
-      flex-wrap: wrap;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      padding: 20px;
+      overflow: hidden;
     }
-    .edit-toolbar.show { display: flex; }
 
-    button {
-      font-family: inherit;
-      border: none;
-      border-radius: 11px;
-      cursor: pointer;
-      font-weight: 650;
-      padding: 11px 16px;
-      font-size: 13px;
-    }
-    button:active { opacity: 0.8; transform: scale(0.97); }
-    .btn-primary { background: var(--brand); color: #fff; box-shadow: 0 4px 12px rgba(244, 63, 94, 0.25); }
-    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
-    .btn-secondary.active-mode { background: #7c3aed; color: #fff; border-color: #a78bfa; }
-    .btn-secondary.active-layover-mode { background: #db2777; color: #fff; border-color: #f472b6; }
-    .btn-full { width: 100%; padding: 13px; font-size: 14px; }
-
-    .modal-backdrop {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(11, 15, 25, 0.65);
-      backdrop-filter: blur(6px);
-      z-index: 100;
-      align-items: flex-end;
-      justify-content: center;
-    }
-    .modal-backdrop.open { display: flex; }
-    .modal-box {
-      background: var(--surface);
-      color: var(--text);
-      border-radius: 24px 24px 0 0;
-      padding: 24px 22px calc(24px + env(safe-area-inset-bottom));
-      width: 100%;
-      max-width: 560px;
-      max-height: 88vh;
-      overflow-y: auto;
-      box-shadow: 0 -15px 40px rgba(0,0,0,0.25);
-      border: 1px solid var(--border);
-    }
-    .dialog-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .dialog-header h2 { font-size: 18px; font-weight: 800; }
-    .dialog-desc { font-size: 12.5px; color: var(--text-sub); line-height: 1.5; margin-bottom: 14px; }
-    .field-label { font-size: 12px; font-weight: 700; color: var(--text-sub); display: block; margin-bottom: 7px; }
-
-    input[type="text"], textarea {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      font-size: 14px;
-      font-family: inherit;
-      margin-bottom: 14px;
-      background: var(--bg);
-      color: var(--text);
-    }
-    input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--brand); }
-    textarea { min-height: 140px; line-height: 1.5; resize: vertical; }
-
-    .toggle-card {
+    /* 상단 헤더 & 컨트롤 */
+    .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 16px;
-      margin-bottom: 12px;
-      cursor: pointer;
+      margin-bottom: 20px;
     }
-    .toggle-card span { font-size: 13.5px; font-weight: 700; }
-    .toggle-card input { width: 18px; height: 18px; }
 
-    .wheel-picker-wrap {
+    .header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+
+    .top-actions {
       display: flex;
+      gap: 6px;
+    }
+
+    .btn-icon {
+      background: #f1f3f5;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .btn-reset-month {
+      background-color: #fff0f0;
+      color: var(--danger-color);
+      border: 1px solid #f5c2c7;
+    }
+
+    .btn-prompt {
+      background-color: #e7f1ff;
+      color: var(--primary-color);
+      border: 1px solid #baddfc;
+    }
+
+    /* 월 이동 바 */
+    .calendar-nav {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      justify-content: center;
-      gap: 10px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 10px;
       margin-bottom: 16px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .calendar-nav button {
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 8px 12px;
+      color: var(--primary-color);
+    }
+
+    /* 달력 영역 (스와이프 컨테이너) */
+    .calendar-viewport {
+      overflow: hidden;
+      width: 100%;
       position: relative;
     }
-    .wheel-col {
-      width: 76px;
-      height: 120px;
-      overflow-y: scroll;
-      scroll-snap-type: y mandatory;
-      text-align: center;
-      scrollbar-width: none;
-    }
-    .wheel-col::-webkit-scrollbar { display: none; }
-    .wheel-item { height: 40px; line-height: 40px; font-size: 16px; font-weight: 700; color: var(--text-sub); scroll-snap-align: center; cursor: pointer; }
-    .wheel-item.selected { color: var(--brand); font-size: 18px; }
-    .wheel-spacer { height: 40px; }
-    .wheel-highlight {
-      position: absolute;
-      left: 16px;
-      right: 16px;
-      top: 50px;
-      height: 40px;
-      border-top: 1.5px solid var(--border);
-      border-bottom: 1.5px solid var(--border);
-      pointer-events: none;
+
+    .calendar-slider {
+      display: flex;
+      width: 100%;
+      transition: transform 0.3s ease;
     }
 
-    .color-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 9px;
-      margin-top: 10px;
-      margin-bottom: 16px;
-      max-height: 50vh;
-      overflow-y: auto;
+    .calendar-month-view {
+      min-width: 100%;
+      flex-shrink: 0;
     }
-    .color-chip { height: 40px; border-radius: 10px; border: 2px solid var(--border); cursor: pointer; }
-    .dialog-footer { display: flex; gap: 10px; margin-top: 10px; }
+
+    .calendar-slider.is-dragging {
+      transition: none;
+    }
+
+    /* 요일 및 날짜 그리드 */
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-bottom: 8px;
+    }
+
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .day-cell {
+      aspect-ratio: 1;
+      background: #fafbfc;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .day-cell.other-month {
+      opacity: 0.3;
+    }
+
+    .day-number {
+      font-weight: 600;
+    }
+
+    .day-content {
+      font-size: 10px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* 백업/복원 3단계 패널 */
+    .backup-section {
+      margin-top: 24px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 16px;
+    }
+
+    .backup-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .backup-steps {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn-step {
+      background: #e7f1ff;
+      color: var(--primary-color);
+      border: 1px solid #baddfc;
+      padding: 10px 4px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .btn-step:active {
+      background: #d0e4ff;
+    }
+
+    /* Manual 입력 영역 */
+    .manual-section {
+      margin-top: 16px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100px;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 12px;
+      resize: vertical;
+      margin-bottom: 8px;
+    }
   </style>
 </head>
 <body>
-  <main id="swipe-container">
-    <header>
-      <div class="brand-sub">HIDONG SCHEDULE</div>
-      <h1>CREW ROSTER</h1>
-    </header>
 
-    <div class="swipe-stage" id="swipe-stage">
-      <section class="month-bar">
-        <div class="month-title" id="current-month-label">11월</div>
-      </section>
-
-      <section class="table-card">
-        <table>
-          <thead>
-            <tr>
-              <th>날짜</th>
-              <th>요일</th>
-              <th>구분</th>
-              <th>편명 / 일정</th>
-              <th>Show up</th>
-              <th>Oju</th>
-            </tr>
-          </thead>
-          <tbody id="roster-tbody"></tbody>
-        </table>
-      </section>
-    </div>
-
-    <div class="legend">
-      <span id="legend-비행"><i style="background:var(--flight-badge)"></i>비행</span>
-      <span id="legend-DH"><i style="background:var(--dh-badge)"></i>DH</span>
-      <span id="legend-휴무"><i style="background:var(--off-badge)"></i>휴무</span>
-      <span id="legend-교육"><i style="background:var(--edu-badge)"></i>교육</span>
-      <span id="legend-기타"><i style="background:var(--etc-badge)"></i>기타</span>
-      <span id="legend-Pakage"><i style="background:var(--pkg-border)"></i>Pakage</span>
-      <span id="legend-Layover"><i style="background:var(--layover-border)"></i>Layover</span>
-    </div>
-
-    <div class="bottom-controls">
-      <div class="edit-toolbar" id="edit-toolbar">
-        <button type="button" class="btn-secondary" id="btn-toggle-pkg-mode" style="flex:1;">📦 Pakage 모드</button>
-        <button type="button" class="btn-secondary" id="btn-toggle-layover-mode" style="flex:1;">✈️ Layover 모드</button>
-        <button type="button" class="btn-secondary" id="btn-theme-toggle" style="flex:1;">☀️/🌙 테마</button>
-        <button type="button" class="btn-secondary" id="btn-open-manual" style="flex:1;">Manual</button>
-        <button type="button" class="btn-secondary" id="btn-copy-prompt" style="flex:1;">AI 프롬프트</button>
-        <button type="button" class="btn-secondary" id="btn-open-backup" style="flex:1;">백업/복원</button>
-      </div>
-      <button type="button" class="btn-secondary" id="btn-toggle-edit" style="width:130px;">편집</button>
-    </div>
-  </main>
-
-  <div class="modal-backdrop" id="edit-dialog">
-    <div class="modal-box">
-      <div class="dialog-header">
-        <h2 id="modal-date-title">일정 편집</h2>
-        <button type="button" class="btn-secondary" data-close="edit-dialog">✕</button>
-      </div>
-      <label class="toggle-card" for="modal-pkg-checkbox" style="border-color:var(--pkg-border);">
-        <span style="color:var(--pkg-border);">📦 Pakage 구간 포함</span>
-        <input type="checkbox" id="modal-pkg-checkbox" style="accent-color:var(--pkg-border);" />
-      </label>
-      <label class="toggle-card" for="modal-layover-checkbox" style="border-color:var(--layover-border);">
-        <span style="color:var(--layover-border);">✈️ Layover 구간 포함 ([NS])</span>
-        <input type="checkbox" id="modal-layover-checkbox" style="accent-color:var(--layover-border);" />
-      </label>
-
-      <label class="field-label">편명 / 일정 (숫자만 입력 시 ZE 자동 부착)</label>
-      <input type="text" id="modal-schedule-input" placeholder="예: 861 ICN-NRT" />
-
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <label class="field-label" style="margin:0;">Show up 시간</label>
-        <button type="button" id="btn-clear-showup" style="padding:4px 10px; font-size:11.5px; background:var(--border); color:var(--text);">시간 없음(-)</button>
-      </div>
-      <div class="wheel-picker-wrap" id="showup-wheel-wrap">
-        <div class="wheel-highlight"></div>
-        <div class="wheel-col" id="wheel-hour"></div>
-        <span style="font-weight:800; font-size:18px;">:</span>
-        <div class="wheel-col" id="wheel-min"></div>
-      </div>
-      <div class="dialog-footer">
-        <button type="button" class="btn-secondary" id="modal-btn-delete" style="color:#ef4444; border-color:#fca5a5;">일정 삭제</button>
-        <button type="button" class="btn-primary btn-full" id="modal-btn-save">저장하기</button>
+  <div class="container">
+    <!-- 헤더 -->
+    <div class="header">
+      <h1>히동 Schedule</h1>
+      <div class="top-actions">
+        <button type="button" class="btn-icon btn-prompt" onclick="showAiPrompt()">🤖 프롬프트</button>
+        <button type="button" class="btn-icon btn-reset-month" onclick="resetCurrentMonthRoster()">🗑️ 초기화</button>
       </div>
     </div>
-  </div>
 
-  <div class="modal-backdrop" id="color-dialog">
-    <div class="modal-box">
-      <div class="dialog-header">
-        <h2 id="color-modal-title">색상 선택</h2>
-        <button type="button" class="btn-secondary" data-close="color-dialog">✕</button>
-      </div>
-      <p class="dialog-desc">40가지 보색 대비 팔레트 중 선택하세요.</p>
-      <div class="color-grid" id="color-palette-grid"></div>
-      <button type="button" class="btn-secondary btn-full" data-close="color-dialog">닫기</button>
+    <!-- 월 이동 네비게이션 -->
+    <div class="calendar-nav">
+      <button type="button" onclick="changeMonth(-1)">◀ 이전</button>
+      <span id="currentMonthLabel">2026년 11월</span>
+      <button type="button" onclick="changeMonth(1)">다음 ▶</button>
     </div>
-  </div>
 
-  <div class="modal-backdrop" id="manual-dialog">
-    <div class="modal-box">
-      <div class="dialog-header">
-        <h2>Manual 일괄 입력</h2>
-        <button type="button" class="btn-secondary" data-close="manual-dialog">✕</button>
-      </div>
-      <p class="dialog-desc"><b>YYYY-MM-DD | 구분 | 일정/편명 | Show-up</b> 형식 입력</p>
-      <textarea id="manual-textarea" placeholder="2026-11-18 | 비행 | ZE535 ICN-NRT | 06:30"></textarea>
-      <div class="dialog-footer">
-        <button type="button" class="btn-secondary btn-full" data-close="manual-dialog">취소</button>
-        <button type="button" class="btn-primary btn-full" id="btn-apply-manual">저장하기</button>
+    <!-- 스와이프 뷰포트 -->
+    <div class="calendar-viewport" id="calendarViewport">
+      <div class="calendar-slider" id="calendarSlider">
+        <div class="calendar-month-view" id="monthView">
+          <div class="weekdays">
+            <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+          </div>
+          <div class="days-grid" id="daysGrid"></div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="modal-backdrop" id="backup-dialog">
-    <div class="modal-box">
-      <div class="dialog-header">
-        <h2>데이터 백업 / 복원</h2>
-        <button type="button" class="btn-secondary" data-close="backup-dialog">✕</button>
+    <!-- 백업 / 복원 3단계 영역 -->
+    <div class="backup-section">
+      <div class="backup-title">데이터 백업 / 복원 (3단계)</div>
+      <div class="backup-steps">
+        <button type="button" class="btn-step" onclick="backupCopyData()">1. 복사하기</button>
+        <button type="button" class="btn-step" onclick="backupPasteData()">2. 붙여넣기</button>
+        <button type="button" class="btn-step" onclick="backupApplyData()">3. 적용하기</button>
       </div>
-      <p class="dialog-desc">백업 데이터를 복사하거나, 복원할 데이터를 붙여넣은 뒤 <b>[적용]</b>을 누르세요.</p>
-      <textarea id="backup-textarea"></textarea>
-      <div class="dialog-footer" style="display:flex; gap:6px;">
-        <button type="button" class="btn-secondary" id="btn-copy-backup" style="flex:1;">복사</button>
-        <button type="button" class="btn-secondary" id="btn-paste-clipboard" style="flex:1;">붙여넣기</button>
-        <button type="button" class="btn-primary" id="btn-apply-restore" style="flex:1;">적용</button>
-      </div>
+    </div>
+
+    <!-- Manual 입력 영역 -->
+    <div class="manual-section">
+      <div class="backup-title">Manual 일괄 입력</div>
+      <textarea id="manualInput" placeholder="2026-11-01 | 비행 | ZE862 HKG | 22:55 형식으로 입력"></textarea>
+      <button type="button" class="btn-step" style="width:100%;" onclick="applyManualData()">Manual 데이터 저장</button>
     </div>
   </div>
 
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(regs) {
-        for (var i = 0; i < regs.length; i++) regs[i].unregister();
+    // 하드코딩된 AI 파서 프롬프트 상수
+    const HARDCODED_AI_PROMPT = `너는 이스타항공(ZE) 승무원 근무표(Crew Roster Report PDF) 전문 파서다. 첨부된 로스터 데이터를 분석해 아래 규칙에 따라 \`YYYY-MM-DD | 구분 | 일정/편명 | Show-up\` 형식으로만 출력하라. 부가 설명은 생략한다.
+
+[출력 포맷 및 규칙]
+1. 구분: 비행, DH, 휴무, 교육, 기타 중 하나로 분류한다.
+   - DO, RDO, PV는 '휴무'로 표기하며, 일정/편명과 Show-up은 모두 \`-\`로 처리한다. (휴무일 옆에 적힌 'GMP'는 허수이므로 절대 표기하지 않는다.)
+2. Show-up 시간: C/I(L) 열의 4자리 숫자를 \`HH:MM\` 형식으로 변환한다. C/I(L) 값이 없는 날은 \`-\`로 표기한다.
+3. 편명 및 목적지 표기:
+   - 단일 비행: \`편명 최종목적지\` 형태로 적는다. (예: \`ZE862 HKG\`, \`ZE535 MDC\`)
+   - 퀵턴(2구간 왕복) 및 다중 구간(3구간 이상): 하루에 여러 편을 연속 비행하는 경우, \`첫번째편명 / NL 최종목적지\`로 요약한다. 여기서 \`N\`은 실제 승무 비행 구간(Leg) 수만 세며, **DH(데드헤드)는 근무가 아니므로 구간 수에서 제외**한다.
+     * 2구간 왕복 예시: \`ZE611 / 2L KIX\`, \`ZE951 / 2L CTS\`
+     * 4구간 비행 예시: \`ZE213 / 4L CJJ\`
+     * 3구간 비행 + 1구간 DH 예시: \`ZE717 / 3L (DH) GMP\`
+4. 단독 DH 이동: 단독으로 데드헤드 이동만 있는 날은 구분을 \`DH\`로 하고 \`편명 도착지\`와 Show-up(또는 출발 시간)을 적는다. (예: \`DH | ZE293 PUS | 08:30\`, \`DH | ZE292 GMP | 08:08\`)
+5. 체류(NS) 및 날짜 변경(+1) 처리:
+   - 로스터의 \`NS\`(Night Stop) 행은 별도 줄로 출력하지 않고 생략한다.
+   - 현지 체류 후 다음 날(+1) 복귀 비행이 있는 경우(예: 21일 밤 출발 후 22일 새벽/오전 도착), 도착일에도 해당 복귀 편명과 도착지를 \`비행\`으로 기록한다. (예: \`2026-11-22 | 비행 | ZE822 CJJ | -\`)
+6. 날짜 누락 방지: 해당 월의 1일부터 말일까지 비는 날짜 없이 시간순으로 정렬하여 출력한다. (단, 데이터 시작일 이전 공백은 제외)`;
+
+    function showAiPrompt() {
+      navigator.clipboard.writeText(HARDCODED_AI_PROMPT).then(() => {
+        alert("📋 AI 파서 프롬프트가 클립보드에 복사되었습니다!\nAI에게 로스터 PDF와 함께 그대로 붙여넣어 사용하세요.");
+      }).catch(() => {
+        prompt("프롬프트 내용:", HARDCODED_AI_PROMPT);
       });
     }
 
-    var STORAGE_ROSTER = 'eastar_crew_roster_v4';
-    var STORAGE_OJU = 'eastar_crew_oju_v4';
-    var STORAGE_THEME = 'eastar_crew_theme';
-    var STORAGE_COLORS = 'eastar_crew_colors_v4';
-    var DAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
-    var TYPES_ORDER = ['비행', 'DH', '휴무', '교육', '기타'];
+    let currentDate = new Date(2026, 10, 1);
+    let currentYear = currentDate.getFullYear();
+    let currentMonth = currentDate.getMonth();
 
-    var AI_PROMPT_TEXT = '너는 이스타항공(ZE) 승무원 근무표 파서다. YYYY-MM-DD | 구분 | 일정/편명 | Show-up 형식으로만 출력할 것.';
+    let rosterData = JSON.parse(localStorage.getItem('roster')) || {};
+    let ojuData = JSON.parse(localStorage.getItem('oju')) || {};
+    let colorsData = JSON.parse(localStorage.getItem('colors')) || {};
 
-    var now = new Date();
-    var currentYearMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-    var rosterData = {};
-    var ojuData = {};
-    var editingDateStr = null;
-    var selectedHour = '06';
-    var selectedMin = '00';
-    var isNoShowUp = false;
-    var isPakageMode = false;
-    var isLayoverMode = false;
-    var editingColorType = null;
+    document.addEventListener('DOMContentLoaded', () => {
+      renderCalendar();
+      initSwipeGesture();
+    });
 
-    var COLOR_PALETTE = [
-      '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6',
-      '#ec4899', '#f43f5e', '#f97306', '#d97706', '#ca8a04', '#65a30d', '#059669', '#0891b2', '#2563eb', '#4f46e5',
-      '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#d97706', '#b45309', '#4d7c0f', '#047857', '#0e7490', '#1d4ed8',
-      '#4338ca', '#6d28d9', '#be185d', '#991b1b', '#9a3412', '#78350f', '#713f12', '#365314', '#065f46', '#155e75'
-    ];
+    function renderCalendar() {
+      const year = currentYear;
+      const month = currentMonth;
+      
+      document.getElementById('currentMonthLabel').innerText = `${year}년 ${month + 1}월`;
+      
+      const grid = document.getElementById('daysGrid');
+      grid.innerHTML = '';
 
-    var defaultColors = { '비행': '#2563eb', 'DH': '#c026d3', '휴무': '#16a34a', '교육': '#d97706', '기타': '#64748b', 'Pakage': '#8b5cf6', 'Layover': '#ec4899' };
-    var customColors = {};
-    try { customColors = JSON.parse(localStorage.getItem(STORAGE_COLORS) || '{}'); } catch(e) { customColors = {}; }
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const prevLastDay = new Date(year, month, 0).getDate();
 
-    function getColor(type) { return customColors[type] || defaultColors[type] || '#2563eb'; }
-
-    function hexToRgba(hex, alpha) {
-      var c = hex.replace('#','');
-      if(c.length === 3) c = c.split('').map(function(x){return x+x;}).join('');
-      var num = parseInt(c, 16);
-      return 'rgba(' + (num >> 16) + ',' + ((num >> 8) & 255) + ',' + (num & 255) + ',' + alpha + ')';
-    }
-
-    function applyCustomStyles() {
-      var styleEl = document.getElementById('dynamic-custom-styles');
-      if (!styleEl) {
-        styleEl = document.createElement('style');
-        styleEl.id = 'dynamic-custom-styles';
-        document.head.appendChild(styleEl);
+      for (let i = firstDayIndex - 1; i >= 0; i--) {
+        const dayNum = prevLastDay - i;
+        const cell = createCell(dayNum, true);
+        grid.appendChild(cell);
       }
-      var css = '';
-      var types = ['비행', 'DH', '휴무', '교육', '기타'];
-      for (var i = 0; i < types.length; i++) {
-        var t = types[i];
-        var col = getColor(t);
-        css += 'tr.type-' + t + ' { background-color: ' + hexToRgba(col, 0.18) + ' !important; }\n';
-        css += '.badge.' + t + ' { background: ' + col + ' !important; }\n';
-        var legendIcon = document.querySelector('#legend-' + t + ' i');
-        if (legendIcon) legendIcon.style.background = col;
+
+      for (let i = 1; i <= lastDay; i++) {
+        const cell = createCell(i, false, year, month);
+        grid.appendChild(cell);
       }
-      var pkgCol = getColor('Pakage');
-      css += ':root { --pkg-border: ' + pkgCol + ' !important; }\n';
-      css += 'tr.pkg-row { background-color: ' + hexToRgba(pkgCol, 0.16) + ' !important; }\n';
-      var pkgIcon = document.querySelector('#legend-Pakage i');
-      if (pkgIcon) pkgIcon.style.background = pkgCol;
-
-      var layCol = getColor('Layover');
-      css += ':root { --layover-border: ' + layCol + ' !important; }\n';
-      css += 'tr.layover-row { background-color: ' + hexToRgba(layCol, 0.16) + ' !important; }\n';
-      var layIcon = document.querySelector('#legend-Layover i');
-      if (layIcon) layIcon.style.background = layCol;
-
-      styleEl.innerHTML = css;
     }
 
-    document.documentElement.setAttribute('data-theme', localStorage.getItem(STORAGE_THEME) || 'dark');
+    function createCell(day, isOtherMonth, year, month) {
+      const cell = document.createElement('div');
+      cell.className = `day-cell ${isOtherMonth ? 'other-month' : ''}`;
+      
+      const numDiv = document.createElement('div');
+      numDiv.className = 'day-number';
+      numDiv.innerText = day;
+      cell.appendChild(numDiv);
 
-    var DEFAULT_OJU_DATES = [
-      '2026-11-18', '2026-11-19', '2026-11-20', '2026-11-25', '2026-11-26', '2026-11-27', '2026-11-28',
-      '2026-12-02', '2026-12-03', '2026-12-04', '2026-12-09', '2026-12-10', '2026-12-11',
-      '2026-12-17', '2026-12-18', '2026-12-19', '2026-12-23', '2026-12-24', '2026-12-25', '2026-12-26'
-    ];
-
-    try {
-      rosterData = JSON.parse(localStorage.getItem(STORAGE_ROSTER) || '{}');
-      ojuData = JSON.parse(localStorage.getItem(STORAGE_OJU) || '{}');
-      for (var i = 0; i < DEFAULT_OJU_DATES.length; i++) {
-        if (!ojuData[DEFAULT_OJU_DATES[i]]) ojuData[DEFAULT_OJU_DATES[i]] = true;
-      }
-      localStorage.setItem(STORAGE_OJU, JSON.stringify(ojuData));
-    } catch (e) {
-      rosterData = {};
-      ojuData = {};
-      for (var k = 0; k < DEFAULT_OJU_DATES.length; k++) ojuData[DEFAULT_OJU_DATES[k]] = true;
-    }
-
-    function getCutoffTimestamp() {
-      var t = new Date();
-      t.setHours(0, 0, 0, 0);
-      return t.getTime();
-    }
-
-    function saveAll() {
-      localStorage.setItem(STORAGE_ROSTER, JSON.stringify(rosterData));
-      localStorage.setItem(STORAGE_OJU, JSON.stringify(ojuData));
-      renderTable();
-    }
-
-    function openModal(id) { document.getElementById(id).classList.add('open'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-    function escapeHtml(str) { return String(str).replace(/[&<>"']/g, function (m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]; }); }
-    function getTodayStr() { var t = new Date(); return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); }
-    function getDateOffsetStr(dateStr, offsetDays) {
-      var p = dateStr.split('-');
-      var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]) + offsetDays);
-      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    }
-
-    function processLayoverSchedules() {
-      var keys = Object.keys(rosterData).sort();
-      for (var i = 1; i < keys.length; i++) {
-        var curDate = keys[i], prevDate = keys[i - 1];
-        if (getDateOffsetStr(prevDate, 1) === curDate) {
-          var curEnt = rosterData[curDate], prevEnt = rosterData[prevDate];
-          if (curEnt && prevEnt && curEnt.schedule && prevEnt.schedule) {
-            var curM = curEnt.schedule.match(/(ZE\d+)/i), prevM = prevEnt.schedule.match(/(ZE\d+)/i);
-            if (curM && prevM && curM[1].toUpperCase() === prevM[1].toUpperCase() && !curEnt.schedule.includes('체류')) {
-              curEnt.schedule = curM[1].toUpperCase() + ' (체류)';
-            }
-          }
+      if (!isOtherMonth) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        if (rosterData[dateStr]) {
+          const contentDiv = document.createElement('div');
+          contentDiv.className = 'day-content';
+          contentDiv.innerText = rosterData[dateStr].type || rosterData[dateStr].title || '근무';
+          cell.appendChild(contentDiv);
         }
       }
+      return cell;
     }
 
-    function renderTable() {
-      processLayoverSchedules();
-      applyCustomStyles();
-      var parts = currentYearMonth.split('-');
-      var year = Number(parts[0]), month = Number(parts[1]);
-      document.getElementById('current-month-label').textContent = year + '년 ' + month + '월';
-
-      var lastDay = new Date(year, month, 0).getDate();
-      var tbody = document.getElementById('roster-tbody');
-      tbody.innerHTML = '';
-
-      var todayStr = getTodayStr();
-      var cutoffTime = getCutoffTimestamp();
-
-      for (var d = 1; d <= lastDay; d++) {
-        var dd = String(d).padStart(2, '0');
-        var dateStr = currentYearMonth + '-' + dd;
-        var rowDateObj = new Date(year, month - 1, d);
-        rowDateObj.setHours(0, 0, 0, 0);
-
-        if (rowDateObj.getTime() < cutoffTime) continue;
-
-        var dayIdx = rowDateObj.getDay();
-        var dayName = DAYS_KO[dayIdx];
-        var entry = rosterData[dateStr];
-        var hasOju = !!ojuData[dateStr];
-        var isToday = (dateStr === todayStr);
-
-        var tr = document.createElement('tr');
-        var classes = [];
-        if (entry && entry.type) classes.push('type-' + entry.type);
-        if (isToday) classes.push('is-today');
-
-        var isPkg = !!(entry && entry.isPakage);
-        if (isPkg) {
-          classes.push('pkg-row');
-          if (!rosterData[getDateOffsetStr(dateStr, -1)]?.isPakage) classes.push('pkg-start');
-          if (!rosterData[getDateOffsetStr(dateStr, 1)]?.isPakage) classes.push('pkg-end');
-        }
-
-        var isLay = !!(entry && entry.isLayover);
-        if (isLay) {
-          classes.push('layover-row');
-          if (!rosterData[getDateOffsetStr(dateStr, -1)]?.isLayover) classes.push('layover-start');
-          if (!rosterData[getDateOffsetStr(dateStr, 1)]?.isLayover) classes.push('layover-end');
-        }
-
-        if (classes.length) tr.className = classes.join(' ');
-
-        var dayClass = dayIdx === 0 ? 'sun' : (dayIdx === 6 ? 'sat' : '');
-        var badgeHtml = entry?.type ? '<span class="badge ' + entry.type + '">' + entry.type + '</span>' : '<span class="badge empty">-</span>';
-        var scheduleText = entry?.schedule ? escapeHtml(entry.schedule) : '<span style="color:var(--text-sub)">-</span>';
-        
-        var tagHtml = '';
-        if (isPkg) tagHtml += '<span class="pkg-tag">PKG</span>';
-        if (isLay) tagHtml += '<span class="layover-tag">NS</span>';
-
-        var showUpHtml = (entry?.showUp && entry.showUp !== '-') ? escapeHtml(entry.showUp.replace(':', ' : ')) : '<span style="color:var(--text-sub)">-</span>';
-
-        tr.innerHTML =
-          '<td class="' + dayClass + '">' + dd + (isToday ? '<div style="font-size:7px; color:var(--today-accent); line-height:1; font-weight:800; margin-top:1px;">TODAY</div>' : '') + '</td>' +
-          '<td class="' + dayClass + '">' + dayName + '</td>' +
-          '<td class="cell-type">' + badgeHtml + '</td>' +
-          '<td class="cell-edit">' + tagHtml + scheduleText + '</td>' +
-          '<td class="cell-edit">' + showUpHtml + '</td>' +
-          '<td class="cell-oju">' + (hasOju ? '🧪' : '<span style="color:var(--border);">·</span>') + '</td>';
-
-        (function (targetDate) {
-          tr.querySelector('.cell-type').onclick = function (e) {
-            e.stopPropagation();
-            if (isPakageMode || isLayoverMode) return;
-            if (!rosterData[targetDate]) {
-              rosterData[targetDate] = { type: TYPES_ORDER[0], schedule: '', showUp: '-', isPakage: false, isLayover: false };
-            } else {
-              var idx = TYPES_ORDER.indexOf(rosterData[targetDate].type);
-              rosterData[targetDate].type = TYPES_ORDER[(idx + 1) % TYPES_ORDER.length];
-            }
-            saveAll();
-          };
-
-          tr.querySelector('.cell-oju').onclick = function (e) {
-            e.stopPropagation();
-            if (isPakageMode || isLayoverMode) return;
-            if (ojuData[targetDate]) delete ojuData[targetDate];
-            else ojuData[targetDate] = true;
-            saveAll();
-          };
-
-          tr.onclick = function () {
-            if (isPakageMode) {
-              if (!rosterData[targetDate]) rosterData[targetDate] = { type: '비행', schedule: '', showUp: '-', isPakage: true, isLayover: false };
-              else rosterData[targetDate].isPakage = !rosterData[targetDate].isPakage;
-              saveAll();
-            } else if (isLayoverMode) {
-              if (!rosterData[targetDate]) rosterData[targetDate] = { type: '비행', schedule: '', showUp: '-', isPakage: false, isLayover: true };
-              else rosterData[targetDate].isLayover = !rosterData[targetDate].isLayover;
-              saveAll();
-            } else {
-              openEditModal(targetDate);
-            }
-          };
-        })(dateStr);
-
-        tbody.appendChild(tr);
+    function changeMonth(direction) {
+      currentMonth += direction;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      } else if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
       }
+      renderCalendar();
     }
 
     function initSwipeGesture() {
-      var container = document.getElementById('swipe-container');
-      var stage = document.getElementById('swipe-stage');
-      var startX = 0;
-      var startY = 0;
-      var isHorizontal = null;
-      var isAnimating = false;
+      const viewport = document.getElementById('calendarViewport');
+      let startX = 0;
+      let currentX = 0;
+      let isDragging = false;
 
-      container.addEventListener('touchstart', function(e) {
-        if (isAnimating) return;
-        startX = e.changedTouches[0].screenX;
-        startY = e.changedTouches[0].screenY;
-        isHorizontal = null;
-        stage.classList.add('is-dragging');
-      }, { passive: true });
+      viewport.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        isDragging = true;
+      });
 
-      container.addEventListener('touchmove', function(e) {
-        if (isAnimating) return;
-        var curX = e.changedTouches[0].screenX;
-        var curY = e.changedTouches[0].screenY;
-        var diffX = curX - startX;
-        var diffY = curY - startY;
+      viewport.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        currentX = e.touches[0].clientX;
+      });
 
-        if (isHorizontal === null && (Math.abs(diffX) > 8 || Math.abs(diffY) > 8)) {
-          isHorizontal = Math.abs(diffX) > Math.abs(diffY);
-        }
-
-        if (isHorizontal) {
-          var dragOffset = diffX * 0.45;
-          var opacity = Math.max(0.45, 1 - Math.abs(diffX) / 420);
-          stage.style.transform = 'translateX(' + dragOffset + 'px)';
-          stage.style.opacity = opacity;
-        }
-      }, { passive: true });
-
-      container.addEventListener('touchend', function(e) {
-        if (isAnimating) return;
-        stage.classList.remove('is-dragging');
-
-        var endX = e.changedTouches[0].screenX;
-        var diffX = endX - startX;
-
-        if (isHorizontal && Math.abs(diffX) > 65) {
-          isAnimating = true;
-          var direction = diffX > 0 ? 1 : -1; // 1: 오른쪽 스와이프(이전달), -1: 왼쪽 스와이프(다음달)
-
-          // 현재 화면이 밀려 나가는 모션
-          stage.style.transform = 'translateX(' + (direction * 110) + 'px)';
-          stage.style.opacity = '0';
-
-          setTimeout(function() {
-            var parts = currentYearMonth.split('-');
-            var year = Number(parts[0]);
-            var month = Number(parts[1]);
-
-            if (direction > 0) {
-              month--;
-              if (month < 1) { month = 12; year--; }
-            } else {
-              month++;
-              if (month > 12) { month = 1; year++; }
-            }
-
-            currentYearMonth = year + '-' + String(month).padStart(2, '0');
-            renderTable();
-
-            // 반대편에서 새로 들어올 시작 위치 세팅
-            stage.classList.add('is-dragging');
-            stage.style.transform = 'translateX(' + (-direction * 110) + 'px)';
-            stage.style.opacity = '0';
-            void stage.offsetWidth; // 리플로우 강제 적용
-
-            // 제자리로 부드럽게 미끄러져 들어오는 모션
-            stage.classList.remove('is-dragging');
-            stage.style.transform = 'translateX(0)';
-            stage.style.opacity = '1';
-
-            setTimeout(function() {
-              isAnimating = false;
-            }, 240);
-          }, 200);
-        } else {
-          // 스와이프 거리가 짧으면 탄력 있게 제자리 복귀
-          stage.style.transform = 'translateX(0)';
-          stage.style.opacity = '1';
-        }
-      }, { passive: true });
-    }
-
-    function initWheelPicker() {
-      var hourCol = document.getElementById('wheel-hour'), minCol = document.getElementById('wheel-min');
-      var hHtml = '<div class="wheel-spacer"></div>';
-      for (var h = 0; h < 24; h++) hHtml += '<div class="wheel-item" data-val="' + String(h).padStart(2, '0') + '">' + String(h).padStart(2, '0') + '</div>';
-      hourCol.innerHTML = hHtml + '<div class="wheel-spacer"></div>';
-
-      var mHtml = '<div class="wheel-spacer"></div>';
-      for (var m = 0; m < 60; m += 10) mHtml += '<div class="wheel-item" data-val="' + String(m).padStart(2, '0') + '">' + String(m).padStart(2, '0') + '</div>';
-      minCol.innerHTML = mHtml + '<div class="wheel-spacer"></div>';
-
-      function bindWheel(col, isHour) {
-        col.addEventListener('scroll', function () {
-          var idx = Math.round(col.scrollTop / 40);
-          var items = col.querySelectorAll('.wheel-item');
-          for (var i = 0; i < items.length; i++) items[i].classList.toggle('selected', i === idx);
-          if (items[idx]) {
-            isNoShowUp = false;
-            document.getElementById('showup-wheel-wrap').style.opacity = '1';
-            if (isHour) selectedHour = items[idx].getAttribute('data-val');
-            else selectedMin = items[idx].getAttribute('data-val');
+      viewport.addEventListener('touchend', () => {
+        if (!isDragging) return;
+        const diff = currentX - startX;
+        if (Math.abs(diff) > 50) {
+          if (diff > 0) {
+            changeMonth(-1);
+          } else {
+            changeMonth(1);
           }
-        });
-      }
-      bindWheel(hourCol, true);
-      bindWheel(minCol, false);
+        }
+        isDragging = false;
+        startX = 0;
+        currentX = 0;
+      });
     }
 
-    function setWheelTime(timeStr) {
-      var hourCol = document.getElementById('wheel-hour'), minCol = document.getElementById('wheel-min'), wrap = document.getElementById('showup-wheel-wrap');
-      if (!timeStr || timeStr === '-') {
-        isNoShowUp = true;
-        wrap.style.opacity = '0.4';
-        selectedHour = '06'; selectedMin = '00';
+    function resetCurrentMonthRoster() {
+      const monthPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-`;
+      const confirmMsg = `${currentYear}년 ${currentMonth + 1}월의 스케줄을 모두 초기화할까요?\n(다른 달 일정과 개인 메모는 유지됩니다)`;
+      if (!confirm(confirmMsg)) return;
+
+      let deletedCount = 0;
+      Object.keys(rosterData).forEach(dateKey => {
+        if (dateKey.startsWith(monthPrefix)) {
+          delete rosterData[dateKey];
+          deletedCount++;
+        }
+      });
+
+      if (deletedCount > 0) {
+        localStorage.setItem('roster', JSON.stringify(rosterData));
+        renderCalendar();
+        alert(`${currentYear}년 ${currentMonth + 1}월 스케줄(${deletedCount}일치)이 초기화되었습니다.`);
       } else {
-        isNoShowUp = false;
-        wrap.style.opacity = '1';
-        var p = timeStr.replace(/\s+/g, '').split(':');
-        selectedHour = String(Number(p[0] || 6)).padStart(2, '0');
-        var rm = Math.round(Number(p[1] || 0) / 10) * 10;
-        selectedMin = String(rm >= 60 ? 50 : rm).padStart(2, '0');
+        alert('초기화할 스케줄 데이터가 없습니다.');
       }
-      var hIdx = Number(selectedHour), mIdx = Number(selectedMin) / 10;
-      hourCol.scrollTop = hIdx * 40; minCol.scrollTop = mIdx * 40;
     }
 
-    function openEditModal(dateStr) {
-      editingDateStr = dateStr;
-      var cur = rosterData[dateStr] || { type: '비행', schedule: '', showUp: '-', isPakage: false, isLayover: false };
-      var parts = dateStr.split('-');
-      document.getElementById('modal-date-title').textContent = Number(parts[1]) + '월 ' + Number(parts[2]) + '일 일정 편집';
-      document.getElementById('modal-pkg-checkbox').checked = !!cur.isPakage;
-      document.getElementById('modal-layover-checkbox').checked = !!cur.isLayover;
-      
-      document.getElementById('modal-schedule-input').value = (cur.schedule === '-' ? '' : (cur.schedule || ''));
+    let copiedBackupText = "";
 
-      openModal('edit-dialog');
-      setTimeout(function () { setWheelTime(cur.showUp); }, 30);
+    function backupCopyData() {
+      const allData = {
+        roster: rosterData,
+        oju: ojuData,
+        colors: colorsData
+      };
+      copiedBackupText = JSON.stringify(allData);
+      navigator.clipboard.writeText(copiedBackupText).then(() => {
+        alert("1단계: 전체 데이터가 클립보드에 복사되었습니다!");
+      }).catch(() => {
+        prompt("클립보드 복사 실패 시 아래 텍스트를 복사하세요:", copiedBackupText);
+      });
     }
 
-    function openColorModal(type) {
-      editingColorType = type;
-      document.getElementById('color-modal-title').textContent = '[' + type + '] 색상 선택';
-      var grid = document.getElementById('color-palette-grid');
-      grid.innerHTML = '';
-      for (var i = 0; i < COLOR_PALETTE.length; i++) {
-        var hex = COLOR_PALETTE[i];
-        var chip = document.createElement('div');
-        chip.className = 'color-chip';
-        chip.style.background = hex;
-        (function(c) {
-          chip.onclick = function() {
-            customColors[editingColorType] = c;
-            localStorage.setItem(STORAGE_COLORS, JSON.stringify(customColors));
-            closeModal('color-dialog');
-            renderTable();
-          };
-        })(hex);
-        grid.appendChild(chip);
+    function backupPasteData() {
+      const pasted = prompt("2단계: 복사해 둔 백업 JSON 텍스트를 여기에 붙여넣으세요:");
+      if (pasted) {
+        copiedBackupText = pasted;
+        alert("2단계: 붙여넣기 완료! 이제 '3. 적용하기' 버튼을 누르세요.");
       }
-      openModal('color-dialog');
     }
 
-    window.addEventListener('DOMContentLoaded', function () {
-      initWheelPicker();
-      initSwipeGesture();
-
-      var legendItems = ['비행', 'DH', '휴무', '교육', '기타', 'Pakage', 'Layover'];
-      for (var l = 0; l < legendItems.length; l++) {
-        (function(t) {
-          var el = document.getElementById('legend-' + t);
-          if (el) el.onclick = function() { openColorModal(t); };
-        })(legendItems[l]);
+    function backupApplyData() {
+      if (!copiedBackupText) {
+        alert("적용할 데이터가 없습니다. 1단계 또는 2단계를 먼저 진행해 주세요.");
+        return;
       }
-
-      document.getElementById('btn-theme-toggle').onclick = function () {
-        var cur = document.documentElement.getAttribute('data-theme');
-        var next = cur === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', next);
-        localStorage.setItem(STORAGE_THEME, next);
-      };
-
-      document.getElementById('btn-toggle-edit').onclick = function () {
-        var tb = document.getElementById('edit-toolbar');
-        tb.classList.toggle('show');
-        this.textContent = tb.classList.contains('show') ? '편집 닫기' : '편집';
-        if (!tb.classList.contains('show')) {
-          isPakageMode = false;
-          isLayoverMode = false;
-          document.body.classList.remove('pkg-mode-active', 'layover-mode-active');
-          var btnP = document.getElementById('btn-toggle-pkg-mode');
-          var btnL = document.getElementById('btn-toggle-layover-mode');
-          btnP.classList.remove('active-mode'); btnP.textContent = '📦 Pakage 모드';
-          btnL.classList.remove('active-layover-mode'); btnL.textContent = '✈️ Layover 모드';
+      try {
+        const parsed = JSON.parse(copiedBackupText);
+        if (parsed.roster) {
+          rosterData = parsed.roster;
+          localStorage.setItem('roster', JSON.stringify(rosterData));
         }
-      };
-
-      document.getElementById('btn-toggle-pkg-mode').onclick = function () {
-        isPakageMode = !isPakageMode;
-        isLayoverMode = false;
-        document.body.classList.toggle('pkg-mode-active', isPakageMode);
-        document.body.classList.remove('layover-mode-active');
-        this.classList.toggle('active-mode', isPakageMode);
-        this.textContent = isPakageMode ? '📦 Pakage 모드 ON' : '📦 Pakage 모드';
-        var btnL = document.getElementById('btn-toggle-layover-mode');
-        btnL.classList.remove('active-layover-mode'); btnL.textContent = '✈️ Layover 모드';
-      };
-
-      document.getElementById('btn-toggle-layover-mode').onclick = function () {
-        isLayoverMode = !isLayoverMode;
-        isPakageMode = false;
-        document.body.classList.toggle('layover-mode-active', isLayoverMode);
-        document.body.classList.remove('pkg-mode-active');
-        this.classList.toggle('active-layover-mode', isLayoverMode);
-        this.textContent = isLayoverMode ? '✈️ Layover 모드 ON' : '✈️ Layover 모드';
-        var btnP = document.getElementById('btn-toggle-pkg-mode');
-        btnP.classList.remove('active-mode'); btnP.textContent = '📦 Pakage 모드';
-      };
-
-      var closes = document.querySelectorAll('[data-close]');
-      for (var i = 0; i < closes.length; i++) {
-        closes[i].onclick = function () { closeModal(this.getAttribute('data-close')); };
+        if (parsed.oju) {
+          ojuData = parsed.oju;
+          localStorage.setItem('oju', JSON.stringify(ojuData));
+        }
+        if (parsed.colors) {
+          colorsData = parsed.colors;
+          localStorage.setItem('colors', JSON.stringify(colorsData));
+        }
+        renderCalendar();
+        alert("3단계: 데이터 복원 및 적용이 완료되었습니다!");
+      } catch (e) {
+        alert("데이터 형식(JSON)이 올바르지 않습니다. 다시 확인해 주세요.");
       }
+    }
 
-      document.getElementById('btn-clear-showup').onclick = function () {
-        isNoShowUp = true;
-        document.getElementById('showup-wheel-wrap').style.opacity = '0.4';
-      };
+    function applyManualData() {
+      const text = document.getElementById('manualInput').value;
+      const lines = text.split('\n');
+      let count = 0;
 
-      document.getElementById('modal-btn-save').onclick = function () {
-        if (!editingDateStr) return;
-        var exType = rosterData[editingDateStr]?.type || '비행';
-        var rawSched = document.getElementById('modal-schedule-input').value.trim();
-        var isPkg = document.getElementById('modal-pkg-checkbox').checked;
-        var isLay = document.getElementById('modal-layover-checkbox').checked;
-        var showUp = isNoShowUp ? '-' : (selectedHour + ':' + selectedMin);
-
-        var finalSched = rawSched;
-        if (finalSched) {
-          var tokens = finalSched.split(' ');
-          if (/^\d+$/.test(tokens[0])) {
-            tokens[0] = 'ZE' + tokens[0];
-            finalSched = tokens.join(' ');
-          }
+      lines.forEach(line => {
+        if (!line.trim()) return;
+        const parts = line.split('|').map(p => p.trim());
+        if (parts.length >= 4) {
+          const [date, type, title, time] = parts;
+          rosterData[date] = { type, title, time };
+          count++;
         }
+      });
 
-        rosterData[editingDateStr] = {
-          type: (finalSched.toUpperCase().includes('PV')) ? '휴무' : exType,
-          schedule: finalSched,
-          showUp: showUp,
-          isPakage: isPkg,
-          isLayover: isLay
-        };
-        saveAll();
-        closeModal('edit-dialog');
-      };
-
-      document.getElementById('modal-btn-delete').onclick = function () {
-        if (!editingDateStr) return;
-        delete rosterData[editingDateStr];
-        saveAll();
-        closeModal('edit-dialog');
-      };
-
-      document.getElementById('btn-open-manual').onclick = function () { openModal('manual-dialog'); };
-      document.getElementById('btn-copy-prompt').onclick = function () {
-        if (navigator.clipboard?.writeText) {
-          navigator.clipboard.writeText(AI_PROMPT_TEXT).then(function () { alert('AI 프롬프트 복사 완료!'); });
-        }
-      };
-
-      document.getElementById('btn-apply-manual').onclick = function () {
-        var lines = document.getElementById('manual-textarea').value.split('\n');
-        var cnt = 0;
-        for (var i = 0; i < lines.length; i++) {
-          var line = lines[i].trim();
-          if (!line) continue;
-          var p = line.split('|').map(function (s) { return s.trim(); });
-          if (/^\d{4}-\d{2}-\d{2}$/.test(p[0])) {
-            var rType = p[1] || '비행';
-            var sched = p[2] || '';
-            if (rType.toUpperCase().includes('PV') || sched.toUpperCase().includes('PV')) rType = '휴무';
-            rosterData[p[0]] = {
-              type: TYPES_ORDER.includes(rType) ? rType : '비행',
-              schedule: sched,
-              showUp: p[3] || '-',
-              isPakage: false,
-              isLayover: false
-            };
-            cnt++;
-          }
-        }
-        if (cnt > 0) {
-          saveAll();
-          closeModal('manual-dialog');
-          alert(cnt + '일치 일정 저장 완료.');
-        } else {
-          alert('유효한 데이터가 없습니다.');
-        }
-      };
-
-      document.getElementById('btn-open-backup').onclick = function () {
-        document.getElementById('backup-textarea').value = JSON.stringify({ roster: rosterData, oju: ojuData, colors: customColors }, null, 2);
-        openModal('backup-dialog');
-      };
-
-      document.getElementById('btn-copy-backup').onclick = function () {
-        var ta = document.getElementById('backup-textarea');
-        ta.value = JSON.stringify({ roster: rosterData, oju: ojuData, colors: customColors }, null, 2);
-        ta.select();
-        if (navigator.clipboard?.writeText) {
-          navigator.clipboard.writeText(ta.value).then(function () {
-            alert('백업 데이터가 클립보드에 복사되었습니다.');
-          });
-        } else {
-          document.execCommand('copy');
-          alert('백업 데이터가 복사되었습니다.');
-        }
-      };
-
-      document.getElementById('btn-paste-clipboard').onclick = function () {
-        if (navigator.clipboard?.readText) {
-          navigator.clipboard.readText().then(function (text) {
-            document.getElementById('backup-textarea').value = text;
-            alert('클립보드 내용을 붙여넣었습니다. [적용] 버튼을 눌러주세요.');
-          }).catch(function () {
-            alert('브라우저 권한 문제로 직접 붙여넣기를 해주세요.');
-          });
-        } else {
-          alert('텍스트 입력창을 길게 눌러 붙여넣기 후 [적용]을 눌러주세요.');
-        }
-      };
-
-      document.getElementById('btn-apply-restore').onclick = function () {
-        var val = document.getElementById('backup-textarea').value;
-        try {
-          var parsed = JSON.parse(val);
-          if (parsed?.roster) {
-            rosterData = parsed.roster;
-            ojuData = parsed.oju || {};
-            if (parsed.colors) {
-              customColors = parsed.colors;
-              localStorage.setItem(STORAGE_COLORS, JSON.stringify(customColors));
-            }
-          } else if (typeof parsed === 'object') {
-            rosterData = parsed;
-          }
-          saveAll();
-          closeModal('backup-dialog');
-          alert('데이터가 성공적으로 적용(복원)되었습니다!');
-        } catch (e) {
-          alert('올바르지 않은 JSON 형식입니다. 텍스트를 다시 확인해주세요.');
-        }
-      };
-
-      renderTable();
-    });
+      localStorage.setItem('roster', JSON.stringify(rosterData));
+      renderCalendar();
+      alert(`Manual 데이터 ${count}건이 적용되었습니다.`);
+    }
   </script>
 </body>
 </html>
