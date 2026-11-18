@@ -1,33 +1,80 @@
-const CACHE_NAME = "crew-roster-shell-v4";
+const CACHE_NAME = "crew-roster-shell-v5";
 const APP_FILES = ["./", "./index.html", "./manifest.json"];
+
 self.addEventListener("install", event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_FILES)));
-  self.skipWaiting();
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await Promise.all(APP_FILES.map(async file => {
+      try {
+        const response = await fetch(file, { cache: "no-store" });
+        if (response.ok) await cache.put(file, response);
+      } catch (error) {
+        // 설치 중 네트워크가 불안정해도 서비스 워커 설치는 계속합니다.
+      }
+    }));
+    await self.skipWaiting();
+  })());
 });
+
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(key => key.startsWith("crew-roster-shell-") && key !== CACHE_NAME).map(key => caches.delete(key)));
+    await Promise.all(
+      keys
+        .filter(key => key.startsWith("crew-roster-shell-") && key !== CACHE_NAME)
+        .map(key => caches.delete(key))
+    );
     await self.clients.claim();
   })());
 });
+
 self.addEventListener("fetch", event => {
   const request = event.request;
-  if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
-  const path = new URL(request.url).pathname;
-  const isAppCode = path.endsWith(".html") || path.endsWith(".js") || path.endsWith(".css");
+  if (request.method !== "GET") return;
+
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+
+  const isNavigation = request.mode === "navigate";
+  const isAppCode =
+    isNavigation ||
+    url.pathname.endsWith(".html") ||
+    url.pathname.endsWith(".js") ||
+    url.pathname.endsWith(".css") ||
+    url.pathname.endsWith(".json");
+
   if (isAppCode) {
-    event.respondWith(fetch(request, { cache: "no-store" }).then(response => {
-      if (response.ok && path.endsWith(".html")) {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+    // 앱 화면과 코드 파일은 항상 최신 서버 응답을 먼저 사용합니다.
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      try {
+        const response = await fetch(request, { cache: "no-store" });
+        if (response && response.ok) {
+          await cache.put(request, response.clone());
+        }
+        return response;
+      } catch (error) {
+        const cached = await cache.match(request);
+        if (cached) return cached;
+
+        if (isNavigation) {
+          const fallback = await cache.match("./index.html") || await cache.match("./");
+          if (fallback) return fallback;
+        }
+        throw error;
       }
-      return response;
-    }).catch(() => caches.match(request).then(cached => cached || caches.match("./index.html"))));
+    })());
     return;
   }
-  event.respondWith(caches.match(request).then(cached => cached || fetch(request).then(response => {
-    if (response.ok) { const copy=response.clone(); caches.open(CACHE_NAME).then(cache=>cache.put(request,copy)); }
+
+  // 이미지 등 정적 파일은 캐시 우선으로 처리해 오프라인 사용을 지원합니다.
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(request);
+    if (cached) return cached;
+
+    const response = await fetch(request);
+    if (response && response.ok) await cache.put(request, response.clone());
     return response;
-  })));
+  })());
 });
