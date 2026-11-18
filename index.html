@@ -219,6 +219,7 @@
     }
     .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 
+    /* 하단 편집기 툴바 정렬 개선 */
     .bottom-controls { margin-top: 18px; text-align: center; }
     .edit-toolbar {
       display: none;
@@ -226,12 +227,34 @@
       border: 1px solid var(--border);
       padding: 12px;
       border-radius: 16px;
-      margin-bottom: 10px;
-      gap: 8px;
-      flex-wrap: wrap;
+      margin-bottom: 12px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.08);
     }
-    .edit-toolbar.show { display: flex; }
+    .edit-toolbar.show {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+    }
+    /* 첫 줄 2개 버튼(PKG, Layover)은 3칸씩 차지하여 반반 정렬 */
+    #btn-toggle-pkg-mode { grid-column: span 3; }
+    #btn-toggle-layover-mode { grid-column: span 3; }
+    /* 둘째 줄 3개 버튼(테마, 일괄입력, Prompt)은 2칸씩 차지하여 3등분 정렬 */
+    #btn-theme-toggle { grid-column: span 2; }
+    #btn-open-manual { grid-column: span 2; }
+    #btn-copy-prompt { grid-column: span 2; }
+    /* 셋째 줄 2개 버튼(Info IN/OUT, 초기화)은 3칸씩 차지하여 반반 정렬 */
+    #btn-open-backup { grid-column: span 3; }
+    #btn-reset-month { grid-column: span 3; }
+
+    .edit-toolbar button {
+      width: 100%;
+      padding: 10px 4px;
+      font-size: 12.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
 
     button {
       font-family: inherit;
@@ -248,7 +271,7 @@
     .btn-secondary.active-mode { background: #7c3aed; color: #fff; border-color: #a78bfa; }
     .btn-secondary.active-layover-mode { background: #db2777; color: #fff; border-color: #f472b6; }
     .btn-full { width: 100%; padding: 13px; font-size: 14px; }
-    .btn-danger { background-color: #fff0f0; color: #d93025; border: 1px solid #f5c2c7; }
+    .btn-danger { background-color: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35); }
 
     .modal-backdrop {
       display: none;
@@ -403,13 +426,13 @@
 
     <div class="bottom-controls">
       <div class="edit-toolbar" id="edit-toolbar">
-        <button type="button" class="btn-secondary" id="btn-toggle-pkg-mode" style="flex:1;">📦 Pakage 모드</button>
-        <button type="button" class="btn-secondary" id="btn-toggle-layover-mode" style="flex:1;">✈️ Layover 모드</button>
-        <button type="button" class="btn-secondary" id="btn-theme-toggle" style="flex:1;">☀️/🌙 테마</button>
-        <button type="button" class="btn-secondary" id="btn-open-manual" style="flex:1;">Manual</button>
-        <button type="button" class="btn-secondary" id="btn-copy-prompt" style="flex:1;">AI 프롬프트</button>
-        <button type="button" class="btn-secondary" id="btn-open-backup" style="flex:1;">백업/복원</button>
-        <button type="button" class="btn-secondary btn-danger" id="btn-reset-month" style="flex:1;">🗑️ 이번 달 초기화</button>
+        <button type="button" class="btn-secondary" id="btn-toggle-pkg-mode">✈️PKG</button>
+        <button type="button" class="btn-secondary" id="btn-toggle-layover-mode">✈️Layover</button>
+        <button type="button" class="btn-secondary" id="btn-theme-toggle">테마</button>
+        <button type="button" class="btn-secondary" id="btn-open-manual">일괄입력</button>
+        <button type="button" class="btn-secondary" id="btn-copy-prompt">Prompt</button>
+        <button type="button" class="btn-secondary" id="btn-open-backup">Info IN/OUT</button>
+        <button type="button" class="btn-secondary btn-danger" id="btn-reset-month">초기화</button>
       </div>
       <button type="button" class="btn-secondary" id="btn-toggle-edit" style="width:130px;">편집</button>
     </div>
@@ -465,7 +488,7 @@
   <div class="modal-backdrop" id="manual-dialog">
     <div class="modal-box">
       <div class="dialog-header">
-        <h2>Manual 일괄 입력</h2>
+        <h2>일괄입력</h2>
         <button type="button" class="btn-secondary" data-close="manual-dialog">✕</button>
       </div>
       <p class="dialog-desc"><b>YYYY-MM-DD | 구분 | 일정/편명 | Show-up</b> 형식 입력</p>
@@ -481,7 +504,7 @@
   <div class="modal-backdrop" id="backup-dialog">
     <div class="modal-box">
       <div class="dialog-header">
-        <h2>데이터 백업 / 복원 (3단계)</h2>
+        <h2>Info IN/OUT (3단계)</h2>
         <button type="button" class="btn-secondary" data-close="backup-dialog">✕</button>
       </div>
       <p class="dialog-desc">버튼을 순서대로 눌러 데이터를 백업하거나 복원하세요.</p>
@@ -539,7 +562,6 @@
     var isPakageMode = false;
     var isLayoverMode = false;
     var editingColorType = null;
-    var copiedBackupText = "";
 
     var COLOR_PALETTE = [
       '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6',
@@ -717,7 +739,7 @@
           '<td class="cell-type">' + badgeHtml + '</td>' +
           '<td class="cell-edit">' + tagHtml + scheduleText + '</td>' +
           '<td class="cell-edit">' + showUpHtml + '</td>' +
-          '<td class="cell-oju">' + (hasOju ? '🧪' : '<span style="color:var(--border);">·</span>') + '</td>';
+          '<td class="cell-oju">' + (hasOju ? '❤️' : '<span style="color:var(--border);">·</span>') + '</td>';
 
         (function (targetDate) {
           tr.querySelector('.cell-type').onclick = function (e) {
@@ -804,7 +826,7 @@
 
         if (isHorizontal && Math.abs(diffX) > 65) {
           isAnimating = true;
-          var direction = diffX > 0 ? 1 : -1; // 1: 우측 스와이프(이전 달), -1: 좌측 스와이프(다음 달)
+          var direction = diffX > 0 ? 1 : -1;
 
           stage.style.transform = 'translateX(' + (direction * 110) + 'px)';
           stage.style.opacity = '0';
@@ -947,14 +969,12 @@
       initSwipeGesture();
       initWheelPickers();
 
-      // 하단 편집 툴바 토글
       document.getElementById('btn-toggle-edit').onclick = function() {
         var toolbar = document.getElementById('edit-toolbar');
         toolbar.classList.toggle('show');
         this.textContent = toolbar.classList.contains('show') ? '닫기' : '편집';
       };
 
-      // 테마 변경 버튼
       document.getElementById('btn-theme-toggle').onclick = function() {
         var cur = document.documentElement.getAttribute('data-theme');
         var next = cur === 'dark' ? 'light' : 'dark';
@@ -962,7 +982,6 @@
         localStorage.setItem(STORAGE_THEME, next);
       };
 
-      // Pakage 모드 토글
       document.getElementById('btn-toggle-pkg-mode').onclick = function() {
         isPakageMode = !isPakageMode;
         isLayoverMode = false;
@@ -972,7 +991,6 @@
         document.getElementById('btn-toggle-layover-mode').classList.remove('active-layover-mode');
       };
 
-      // Layover 모드 토글
       document.getElementById('btn-toggle-layover-mode').onclick = function() {
         isLayoverMode = !isLayoverMode;
         isPakageMode = false;
@@ -982,7 +1000,6 @@
         document.getElementById('btn-toggle-pkg-mode').classList.remove('active-mode');
       };
 
-      // 색상 팔레트 모달 오픈 (레전드 클릭 시)
       var legends = document.querySelectorAll('.legend span');
       for (var l = 0; l < legends.length; l++) {
         (function(span) {
@@ -1011,7 +1028,6 @@
         })(legends[l]);
       }
 
-      // 모달 닫기 버튼들
       var closeBtns = document.querySelectorAll('[data-close]');
       for (var b = 0; b < closeBtns.length; b++) {
         closeBtns[b].onclick = function() {
@@ -1019,12 +1035,10 @@
         };
       }
 
-      // Manual 모달 오픈
       document.getElementById('btn-open-manual').onclick = function() {
         openModal('manual-dialog');
       };
 
-      // Manual 데이터 저장
       document.getElementById('btn-apply-manual').onclick = function() {
         var text = document.getElementById('manual-textarea').value;
         var lines = text.split('\n');
@@ -1044,10 +1058,9 @@
         }
         saveAll();
         closeModal('manual-dialog');
-        alert('Manual 데이터 ' + count + '건이 반영되었습니다.');
+        alert('일괄입력 데이터 ' + count + '건이 반영되었습니다.');
       };
 
-      // AI 프롬프트 복사 버튼
       document.getElementById('btn-copy-prompt').onclick = function() {
         navigator.clipboard.writeText(AI_PROMPT_TEXT).then(function() {
           alert('📋 AI 파서 프롬프트가 클립보드에 복사되었습니다!');
@@ -1056,14 +1069,12 @@
         });
       };
 
-      // 백업/복원 모달 오픈
       document.getElementById('btn-open-backup').onclick = function() {
         var allData = { roster: rosterData, oju: ojuData, colors: customColors };
         document.getElementById('backup-textarea').value = JSON.stringify(allData, null, 2);
         openModal('backup-dialog');
       };
 
-      // 백업 3단계: 1. 복사하기
       document.getElementById('btn-backup-copy').onclick = function() {
         var ta = document.getElementById('backup-textarea');
         var allData = { roster: rosterData, oju: ojuData, colors: customColors };
@@ -1077,7 +1088,6 @@
         });
       };
 
-      // 백업 3단계: 2. 붙여넣기 (포커스 유도)
       document.getElementById('btn-backup-paste').onclick = function() {
         var ta = document.getElementById('backup-textarea');
         ta.value = '';
@@ -1085,7 +1095,6 @@
         alert('2단계: 텍스트 상자를 길게 눌러(또는 Ctrl+V) 백업 JSON 코드를 붙여넣은 뒤 [3. 적용하기]를 누르세요.');
       };
 
-      // 백업 3단계: 3. 적용하기
       document.getElementById('btn-backup-apply').onclick = function() {
         var val = document.getElementById('backup-textarea').value.trim();
         if (!val) {
@@ -1108,12 +1117,10 @@
         }
       };
 
-      // 이번 달 초기화 버튼
       document.getElementById('btn-reset-month').onclick = function() {
         resetCurrentMonthRoster();
       };
 
-      // 일정 편집 저장
       document.getElementById('modal-btn-save').onclick = function() {
         if (!editingDateStr) return;
         var schedInput = document.getElementById('modal-schedule-input').value.trim();
@@ -1138,7 +1145,6 @@
         closeModal('edit-dialog');
       };
 
-      // 일정 삭제
       document.getElementById('modal-btn-delete').onclick = function() {
         if (!editingDateStr) return;
         delete rosterData[editingDateStr];
@@ -1146,7 +1152,6 @@
         closeModal('edit-dialog');
       };
 
-      // Show-up 시간 없음 버튼
       document.getElementById('btn-clear-showup').onclick = function() {
         isNoShowUp = true;
         selectedHour = '06';
