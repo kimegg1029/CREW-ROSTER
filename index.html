@@ -1254,16 +1254,24 @@
     });
   </script>
   <script>
-    // 홈 화면 앱을 열 때마다 최신 서비스 워커를 확인합니다.
+    // 홈 화면 앱 실행 시 새 서비스 워커를 확인하고, 새 버전이 적용되면 화면을 한 번 갱신합니다.
     if ('serviceWorker' in navigator) {
+      var crewRosterReloading = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (crewRosterReloading) return;
+        crewRosterReloading = true;
+        window.location.reload();
+      });
+
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
-          .then(function (registration) {
-            registration.update().catch(function () {});
-          })
-          .catch(function (error) {
-            console.warn('앱 업데이트 확인 실패:', error);
-          });
+        navigator.serviceWorker.register('./sw.js?v=6', {
+          scope: './',
+          updateViaCache: 'none'
+        }).then(function (registration) {
+          registration.update().catch(function () {});
+        }).catch(function (error) {
+          console.warn('앱 업데이트 확인 실패:', error);
+        });
       });
     }
   </script>
