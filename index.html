@@ -197,8 +197,16 @@
     .pkg-tag { color: var(--pkg-border); border-color: var(--pkg-border); }
     .layover-tag { color: var(--layover-border); border-color: var(--layover-border); }
     .cell-schedule {
-      text-align: left;
+      position: relative;
+      text-align: center;
       padding-left: 4px;
+    }
+    .cell-schedule .tag-slot {
+      position: absolute;
+      left: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      margin-right: 0;
     }
 
     .legend {
